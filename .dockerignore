@@ -1,0 +1,24 @@
+# Secrets — never bake into image
+.env
+
+# Local database and logs
+data/
+logs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Frontend build inputs (built in Docker stage 1)
+frontend/node_modules/
+frontend/dist/
+
+# Dev/docs
+.git/
+.gitignore
+*.md
+*.rtf
+bot/
+tests/
