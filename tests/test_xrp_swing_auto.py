@@ -72,6 +72,7 @@ def test_a_good_setup_opens_a_trade_and_is_recorded_approved():
 
     store_setup()
     xs.enable_auto(300.0)
+    xs.disable_shadow_mode()  # live path — shadow defaults on, see shadow-mode tests below
 
     with with_live_price(0.9200):
         result = xs.run_auto_cycle()
@@ -129,6 +130,7 @@ def test_no_live_price_falls_back_to_the_evaluation_price():
 
     store_setup(xrp_price=0.9100)
     xs.enable_auto(300.0)
+    xs.disable_shadow_mode()
 
     with with_live_price(None):
         result = xs.run_auto_cycle()
@@ -187,6 +189,7 @@ def test_setup_already_consumed_persists_across_a_restart():
 
     eval_id = store_setup()
     xs.enable_auto(300.0)
+    xs.disable_shadow_mode()
     with with_live_price(0.9200):
         xs.run_auto_cycle()
     assert xs.get_active_trade() is not None
@@ -196,6 +199,96 @@ def test_setup_already_consumed_persists_across_a_restart():
     # short-circuit this, the consumed-eval_id guard is the real backstop.
     reloaded = xs._load_auto_state()
     assert reloaded["last_opened_eval_id"] == eval_id
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Shadow mode — the one guarantee standing between a fixed strategy and an
+# unintended live position. This agent has never opened a real trade; the
+# strategy review that led here changes what happens at the moment of entry,
+# so the first real run is a dry one by default, not by operator discipline.
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_shadow_mode_is_on_by_default():
+    """A brand-new state row must default safe without anyone opting in."""
+    import spot.xrp_swing as xs
+
+    status = xs.get_auto_status()
+    assert status["shadow_mode"] is True
+
+
+def test_approved_proposal_in_shadow_mode_never_opens_a_trade():
+    """The actual safety property. An approved proposal reaches the exact
+    branch that would call open_trade() — and stops there."""
+    import spot.xrp_swing as xs
+
+    store_setup()
+    xs.enable_auto(300.0)
+    # shadow_mode is on by default — deliberately not calling disable_shadow_mode()
+
+    with with_live_price(0.9200):
+        result = xs.run_auto_cycle()
+
+    assert result["actions"], "expected a SHADOW action string"
+    assert "SHADOW" in result["actions"][0]
+    assert xs.get_active_trade() is None
+
+    with get_session() as s:
+        decisions = s.query(XRPRiskDecision).all()
+        assert len(decisions) == 1
+        assert decisions[0].approved is True
+        assert decisions[0].shadowed is True
+        # Sizing is still computed and recorded even though nothing opened —
+        # the point is a full paper-trading record, not a stub entry.
+        assert decisions[0].final_size_usd is not None
+
+
+def test_vetoed_proposal_is_never_marked_shadowed():
+    """shadowed is meaningless for a refusal — must not be set on one."""
+    import spot.xrp_swing as xs
+
+    store_setup(verdict="WATCHING", score=20)
+    xs.enable_auto(300.0)
+
+    with with_live_price(0.9200):
+        xs.run_auto_cycle()
+
+    with get_session() as s:
+        decision = s.query(XRPRiskDecision).one()
+        assert decision.approved is False
+        assert decision.shadowed is False
+
+
+def test_disabling_shadow_mode_lets_the_next_approval_open_for_real():
+    """The one deliberate way out of shadow mode, and that it actually works."""
+    import spot.xrp_swing as xs
+
+    store_setup()
+    xs.enable_auto(300.0)
+    status = xs.disable_shadow_mode()
+    assert status["shadow_mode"] is False
+
+    with with_live_price(0.9200):
+        result = xs.run_auto_cycle()
+
+    assert xs.get_active_trade() is not None
+    with get_session() as s:
+        decision = s.query(XRPRiskDecision).one()
+        assert decision.shadowed is False
+
+
+def test_shadow_mode_survives_a_restart():
+    """State set in one process lifetime must still be honoured after a
+    fresh session reads it — the same guarantee the rest of this state
+    migration exists for, applied to the flag that matters most."""
+    import spot.xrp_swing as xs
+
+    xs.disable_shadow_mode()
+    reloaded = xs._load_auto_state()
+    assert reloaded["shadow_mode"] is False
+
+    xs.enable_shadow_mode()
+    reloaded = xs._load_auto_state()
+    assert reloaded["shadow_mode"] is True
 
 
 def test_default_state_is_created_on_first_use_without_crashing():

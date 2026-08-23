@@ -240,9 +240,90 @@ def disable_auto_route():
     return disable_auto()
 
 
+@router.post("/auto/shadow/enable")
+def enable_shadow_mode_route():
+    """
+    Turn shadow mode on: approved entries are logged to the risk decision
+    audit trail but never actually opened. This is the default state — this
+    route exists to go back to it after shadow mode has been turned off.
+    """
+    from spot.xrp_swing import enable_shadow_mode
+    return enable_shadow_mode()
+
+
+@router.post("/auto/shadow/disable")
+def disable_shadow_mode_route():
+    """
+    Turn shadow mode off: approved entries will actually call open_trade()
+    and place real positions. A deliberate, separate step from enabling
+    auto-trading itself — read the risk decision log before flipping this.
+    """
+    from spot.xrp_swing import disable_shadow_mode
+    return disable_shadow_mode()
+
+
 @router.post("/auto/run-now")
 def run_auto_now():
     """Trigger an immediate auto-cycle (evaluate + monitor + auto-open if ready)."""
     from spot.xrp_swing import run_auto_cycle, evaluate_setup
     evaluate_setup(store=True)   # refresh stored verdict first
     return run_auto_cycle()
+
+
+@router.get("/risk-decisions")
+def get_risk_decisions(limit: int = 30):
+    """
+    Audit trail of every auto-open the risk supervisor has considered,
+    approved or vetoed, most recent first — with the full per-gate
+    pass/fail breakdown so the UI can show exactly why.
+    """
+    import json
+    from data.database import get_session
+    from data.models import XRPRiskDecision
+    from spot.xrp_risk.reasons import VetoReason
+    from sqlalchemy import desc
+
+    with get_session() as s:
+        rows = (
+            s.query(XRPRiskDecision)
+            .order_by(desc(XRPRiskDecision.id))
+            .limit(min(limit, 200))
+            .all()
+        )
+        decisions = []
+        for row in rows:
+            try:
+                checks = json.loads(row.checks_json) if row.checks_json else []
+            except (TypeError, ValueError):
+                checks = []
+            for check in checks:
+                if check.get("reason"):
+                    try:
+                        check["reason_explain"] = VetoReason(check["reason"]).explain
+                    except ValueError:
+                        check["reason_explain"] = None
+            decisions.append({
+                "id": row.id,
+                "decided_at": row.decided_at.isoformat() if row.decided_at else None,
+                "setup_type": row.setup_type,
+                "eval_id": row.eval_id,
+                "entry_price": row.entry_price,
+                "requested_size_usd": row.requested_size_usd,
+                "final_size_usd": row.final_size_usd,
+                "stop": row.stop,
+                "tp1": row.tp1,
+                "tp2": row.tp2,
+                "tp3": row.tp3,
+                "rr_ratio": row.rr_ratio,
+                "approved": row.approved,
+                "veto_reason": row.veto_reason,
+                "veto_reason_explain": (
+                    VetoReason(row.veto_reason).explain
+                    if row.veto_reason and row.veto_reason in VetoReason._value2member_map_
+                    else None
+                ),
+                "detail": row.detail,
+                "checks": checks,
+                "shadowed": row.shadowed,
+            })
+        return {"decisions": decisions}

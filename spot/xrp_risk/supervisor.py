@@ -81,6 +81,7 @@ def persist(
     verdict: Verdict,
     *,
     final_size_usd: float | None = None,
+    shadowed: bool = False,
 ) -> None:
     """
     Record the decision, approved or not.
@@ -88,6 +89,9 @@ def persist(
     `final_size_usd` is filled in only when the trade actually opens, after
     the risk-budget sizing step downstream — the gates themselves don't
     reject on size, they only gate whether opening is wise at all.
+
+    `shadowed=True` marks an approved decision that was logged but never sent
+    to open_trade() — meaningless when the verdict was a veto.
     """
     with get_session() as s:
         s.add(
@@ -106,5 +110,6 @@ def persist(
                 veto_reason=verdict.reason.value if verdict.reason else None,
                 detail=verdict.detail,
                 checks_json=verdict.checks_json,
+                shadowed=shadowed,
             )
         )

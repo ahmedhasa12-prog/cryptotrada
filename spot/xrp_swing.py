@@ -863,6 +863,7 @@ def _load_auto_state() -> dict:
         row = _auto_state_row(s)
         return {
             "enabled":              row.enabled,
+            "shadow_mode":          row.shadow_mode,
             "auto_size_usd":        row.auto_size_usd,
             "last_check":           row.last_check.isoformat() if row.last_check else None,
             "last_action":          row.last_action or "Auto-trading not yet started",
@@ -879,6 +880,9 @@ def _save_auto_state(state: dict) -> None:
     with get_session() as s:
         row = _auto_state_row(s)
         row.enabled             = state.get("enabled", False)
+        # Default True, not False: a state dict built without going through
+        # _load_auto_state() first must still fail safe into shadow mode.
+        row.shadow_mode         = state.get("shadow_mode", True)
         row.auto_size_usd       = state.get("auto_size_usd", _DEFAULT_SIZE_USD)
         row.last_check          = datetime.fromisoformat(state["last_check"]) if state.get("last_check") else None
         row.last_action         = state.get("last_action")
@@ -921,6 +925,28 @@ def disable_auto() -> dict:
     state["last_action"] = "Auto-trading disabled"
     _save_auto_state(state)
     logger.info("XRP Swing AUTO: disabled")
+    return get_auto_status()
+
+
+def enable_shadow_mode() -> dict:
+    """Approved entries are logged to the Risk Log but never opened for real.
+    This is the default; call disable_shadow_mode() to go live."""
+    state = _load_auto_state()
+    state["shadow_mode"] = True
+    state["last_action"] = "Shadow mode enabled — approved entries will be logged, not opened"
+    _save_auto_state(state)
+    logger.info("XRP Swing AUTO: shadow mode enabled")
+    return get_auto_status()
+
+
+def disable_shadow_mode() -> dict:
+    """Approved entries will actually call open_trade(). A deliberate,
+    separate step from enabling auto-trading itself."""
+    state = _load_auto_state()
+    state["shadow_mode"] = False
+    state["last_action"] = "Shadow mode disabled — approved entries will be opened for real"
+    _save_auto_state(state)
+    logger.warning("XRP Swing AUTO: shadow mode DISABLED — entries will now open for real")
     return get_auto_status()
 
 
@@ -1237,7 +1263,7 @@ def run_auto_cycle() -> dict:
         _save_auto_state(state)
         return {"enabled": True, "verdict": verdict_str, "score": score, "actions": actions}
 
-    # ── Approved — size, then open ─────────────────────────────────────────────
+    # ── Approved — size the position ────────────────────────────────────────────
     # Risk-based sizing: cap the position so max loss ≤ RISK_BUDGET_USD. Not a
     # veto — a good setup gets sized down rather than skipped.
     stop_pct = (xrp_price - params["stop"]) / xrp_price if xrp_price > params["stop"] else 0.05
@@ -1248,6 +1274,22 @@ def run_auto_cycle() -> dict:
     # later cycles as price moves favorably (handled in the `active` branch
     # above).
     stage1_size = round(final_size * XRP_AUTO_STAGE_PCTS[0], 2)
+
+    if state.get("shadow_mode", True):
+        # Approved, but this agent has never opened a real trade, and this
+        # round of fixes changes exactly what happens at the moment of entry
+        # — nothing reaches open_trade() until shadow mode is turned off
+        # deliberately via disable_shadow_mode().
+        msg = (f"SHADOW — would AUTO-OPEN Stage 1/3 Setup {params['setup_type']} @ ${xrp_price:.4f} | "
+               f"stop ${params['stop']} | TP1 ${params['tp1']} | TP2 ${params['tp2']} | TP3 ${params['tp3']} | "
+               f"R:R {params['rr_ratio']:.2f} | size ${stage1_size:.0f} (20%)")
+        actions.append(msg)
+        state["last_action"]         = msg
+        state["last_opened_eval_id"] = eval_id   # one shadow record per signal, same as a real open
+        logger.info(f"XRP Swing AUTO: {msg}")
+        risk_supervisor.persist(proposal, risk_verdict, final_size_usd=final_size, shadowed=True)
+        _save_auto_state(state)
+        return {"enabled": True, "verdict": verdict_str, "score": score, "actions": actions}
 
     try:
         open_trade(

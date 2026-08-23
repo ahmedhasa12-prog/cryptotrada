@@ -51,6 +51,13 @@ _MIGRATIONS = [
     ("trade_reviews", "btc_dom_at_entry",         "REAL"),
     # TP1 partial-close banked P&L — added to runner close for full position P&L
     ("spot_trades",         "tp1_pnl_usd",        "REAL"),
+    # XRP swing shadow mode — xrp_auto_state/xrp_risk_decisions already exist in
+    # the live DB from Phase 2, so these columns need the ALTER path too, not
+    # just create_all (which only creates missing tables, never alters existing
+    # ones). Both default true/false so an old row reads as "safe" the moment
+    # this runs — no positions can slip open on the same deploy that adds it.
+    ("xrp_auto_state",      "shadow_mode",        "INTEGER DEFAULT 1"),
+    ("xrp_risk_decisions",  "shadowed",           "INTEGER DEFAULT 0"),
 ]
 
 

@@ -366,6 +366,11 @@ class XRPAutoState(Base):
     enabled:        Mapped[bool]  = mapped_column(Boolean, default=False, nullable=False)
     auto_size_usd:  Mapped[float] = mapped_column(Float, default=300.0, nullable=False)
 
+    # Defaults True deliberately: this agent has never opened a real trade, and
+    # the R:R/level fixes change what happens the moment it can. No code path
+    # may send an order to open_trade() while this is set — see run_auto_cycle.
+    shadow_mode: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
     last_check:  Mapped[datetime | None] = mapped_column(DateTime)
     last_action: Mapped[str | None]      = mapped_column(Text)
 
@@ -409,4 +414,9 @@ class XRPRiskDecision(Base):
     veto_reason:  Mapped[str | None]   = mapped_column(String(48))
     detail:       Mapped[str | None]   = mapped_column(Text)
     checks_json:  Mapped[str | None]   = mapped_column(Text)  # full per-gate audit trail
+
+    # True when approved but not actually sent to open_trade() — the shadow-mode
+    # paper record. Distinguishes "approved and taken" from "approved, would
+    # have taken" in the Risk Log. Meaningless when approved=False.
+    shadowed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
