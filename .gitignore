@@ -12,7 +12,12 @@ build/
 venv/
 *.log
 logs/
-data/
 frontend/node_modules/
 frontend/dist/
 .DS_Store
+.claude/*.bak
+
+# Runtime state written by the running app — data/*.py (models, database
+# session management) is source and must stay tracked; these are generated.
+data/*.json
+data/*.yaml
