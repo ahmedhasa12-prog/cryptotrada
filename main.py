@@ -37,7 +37,7 @@ from spot.auto_trader import fast_sl_cycle
 from spot.reviewer import run_reviews as run_trade_reviews
 from spot.param_advisor import run_and_store as run_param_advisory
 from spot.xrp_swing import (evaluate_setup as xrp_swing_evaluate, generate_weekly_review as xrp_weekly_review,
-                            fast_sl_check as xrp_fast_sl_check)
+                            fast_sl_check as _xrp_fast_sl_cycle)
 from spot.trading_modes import (get_trading_mode, TradingMode,
                                 get_agent_registry, start_all_agents, stop_all_agents)
 from web.alerts import get_bus, AlertLevel
@@ -126,8 +126,16 @@ async def _fast_sl_check() -> None:
     Runs every 30 seconds — enforces hard SL and trailing stop immediately.
     Keeps losses tight without waiting for the 5-minute bot cycle.
     Also updates trailing peaks as prices rise between 5-min ticks.
+
+    Stands down once AutoTrendAgent is running: its own fast cycle calls this
+    same underlying function, and running both would apply stop-loss/trailing
+    logic twice per tick. This is the standalone, pre-agent-framework path —
+    it owns the cycle only while the agent is not.
     """
     import asyncio
+    from spot.trading_modes import AgentType, is_agent_running
+    if is_agent_running(AgentType.AUTO_TREND):
+        return
     try:
         positions = get_open_positions()
         if not positions:
@@ -163,6 +171,25 @@ async def _check_position_alerts() -> None:
         
     except Exception as e:
         logger.error(f"Position/trading cycle error: {e}")
+
+
+async def _xrp_fast_sl_check() -> None:
+    """
+    Runs every 30 seconds — the standalone path for XRP swing's stop-loss and
+    trailing enforcement, scheduled independently of the agent framework.
+
+    Stands down once XRPSwingAgent is running, for the same reason as
+    _fast_sl_check above: the agent's own fast cycle calls this identical
+    underlying function, and running both would apply stop-loss/trailing
+    logic twice per tick.
+    """
+    from spot.trading_modes import AgentType, is_agent_running
+    if is_agent_running(AgentType.XRP_SWING):
+        return
+    try:
+        _xrp_fast_sl_cycle()
+    except Exception as e:
+        logger.error(f"XRP fast SL check error: {e}")
 
 
 def _run_trade_reviews_job() -> None:
@@ -269,7 +296,7 @@ def main() -> None:
     # XRP Swing — Sunday 07:00 UTC weekly review stored as system event
     scheduler.add_job(xrp_weekly_review, "cron", day_of_week="sun", hour=7, minute=0, id="xrp_swing_weekly")
     # XRP Swing — 30s fast SL guard: enforces hard stop and trailing stop immediately
-    scheduler.add_job(xrp_fast_sl_check, "interval", seconds=30, id="xrp_fast_sl")
+    scheduler.add_job(_xrp_fast_sl_check, "interval", seconds=30, id="xrp_fast_sl")
 
     @asynccontextmanager
     async def lifespan(_):

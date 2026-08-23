@@ -695,6 +695,26 @@ async def stop_all_agents() -> dict[AgentType, AgentStatus]:
     return {}
 
 
+def is_agent_running(agent_type: AgentType) -> bool:
+    """
+    Safe check for whether an agent currently owns its own cycle.
+
+    Used by any standalone scheduled job whose logic duplicates what an
+    agent's fast cycle already does (fast_sl_cycle, fast_sl_check) — those
+    jobs predate the agent framework and must stand down once the
+    corresponding agent is running, or stop-loss/trailing logic executes
+    twice per tick. Never raises: before the registry exists (early in
+    startup, or if agents were never initialised) this returns False, which
+    correctly leaves the standalone job as the sole owner of the cycle.
+    """
+    if _registry is None:
+        return False
+    try:
+        return _registry.get_agent(agent_type).is_running
+    except Exception:
+        return False
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # STRATEGY CONTEXT (for backward compatibility with existing code)
 # ══════════════════════════════════════════════════════════════════════════════
