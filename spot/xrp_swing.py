@@ -12,15 +12,17 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 from loguru import logger
 from sqlalchemy import text
 
 from data.database import get_session
-from data.models import MacroSnapshot, OhlcvCandle, XRPSwingSetup, XRPSwingTrade
+from data.models import MacroSnapshot, OhlcvCandle, XRPAutoState, XRPSwingSetup, XRPSwingTrade
 from spot.streamer import get_prices
+from spot.xrp_risk import supervisor as risk_supervisor
+from spot.xrp_risk.context import RiskContext
+from spot.xrp_risk.proposal import OpenProposal
 
 # ── Key levels ────────────────────────────────────────────────────────────────
 
@@ -836,27 +838,55 @@ def generate_weekly_review() -> str:
 
 
 # ── Auto-bot state ────────────────────────────────────────────────────────────
+#
+# Persisted to the xrp_auto_state table (data/models.py) rather than the
+# data/xrp_swing_auto.json file this used to live in — that file was a second,
+# inconsistent persistence mechanism alongside the database every other piece
+# of trade state already uses. The dict shape below is unchanged, so every
+# caller that reads/writes `state[...]` continues to work without modification.
 
-_AUTO_STATE_FILE = Path(__file__).parent.parent / "data" / "xrp_swing_auto.json"
 _DEFAULT_SIZE_USD = 300.0
 
 
+def _auto_state_row(s) -> XRPAutoState:
+    """The one XRPAutoState row, created on first use."""
+    row = s.query(XRPAutoState).order_by(XRPAutoState.id).first()
+    if row is None:
+        row = XRPAutoState(auto_size_usd=_DEFAULT_SIZE_USD)
+        s.add(row)
+        s.flush()
+    return row
+
+
 def _load_auto_state() -> dict:
-    if _AUTO_STATE_FILE.exists():
-        try:
-            return json.loads(_AUTO_STATE_FILE.read_text())
-        except Exception:
-            pass
-    return {
-        "enabled":      False,
-        "auto_size_usd": _DEFAULT_SIZE_USD,
-        "last_check":   None,
-        "last_action":  "Auto-trading not yet started",
-    }
+    with get_session() as s:
+        row = _auto_state_row(s)
+        return {
+            "enabled":              row.enabled,
+            "auto_size_usd":        row.auto_size_usd,
+            "last_check":           row.last_check.isoformat() if row.last_check else None,
+            "last_action":          row.last_action or "Auto-trading not yet started",
+            "cooldown_until":       row.cooldown_until.isoformat() if row.cooldown_until else None,
+            "last_opened_eval_id":  row.last_opened_eval_id,
+            "auto_stage":           row.auto_stage,
+            "auto_total_size":      row.auto_total_size,
+            "auto_stage_sizes":     json.loads(row.auto_stage_sizes_json) if row.auto_stage_sizes_json
+                                     else XRP_AUTO_STAGE_PCTS,
+        }
 
 
 def _save_auto_state(state: dict) -> None:
-    _AUTO_STATE_FILE.write_text(json.dumps(state, indent=2))
+    with get_session() as s:
+        row = _auto_state_row(s)
+        row.enabled             = state.get("enabled", False)
+        row.auto_size_usd       = state.get("auto_size_usd", _DEFAULT_SIZE_USD)
+        row.last_check          = datetime.fromisoformat(state["last_check"]) if state.get("last_check") else None
+        row.last_action         = state.get("last_action")
+        row.cooldown_until      = datetime.fromisoformat(state["cooldown_until"]) if state.get("cooldown_until") else None
+        row.last_opened_eval_id = state.get("last_opened_eval_id")
+        row.auto_stage          = state.get("auto_stage", 0)
+        row.auto_total_size     = state.get("auto_total_size")
+        row.auto_stage_sizes_json = json.dumps(state.get("auto_stage_sizes", XRP_AUTO_STAGE_PCTS))
 
 
 def get_auto_status() -> dict:
@@ -1143,84 +1173,86 @@ def run_auto_cycle() -> dict:
         _save_auto_state(state)
         return {"enabled": True, "in_trade": True, "actions": actions}
 
-    # C4: cooldown guard
-    cooldown_until_str = state.get("cooldown_until")
-    if cooldown_until_str:
-        cooldown_until = datetime.fromisoformat(cooldown_until_str)
-        if now < cooldown_until:
-            remaining_h = (cooldown_until - now).total_seconds() / 3600
-            state["last_action"] = f"Cooldown active — resumes in {remaining_h:.1f}h (after SL/trail close)"
-            _save_auto_state(state)
-            return {"enabled": True, "cooldown": True, "actions": actions}
-
     setup = get_latest_setup()
     if not setup:
         state["last_action"] = "No evaluation stored — waiting for 4H candle refresh"
         _save_auto_state(state)
         return {"enabled": True, "actions": actions}
 
-    verdict = setup.get("verdict", "WATCHING")
-    score   = setup.get("score", 0)
-    eval_id = setup.get("id")
+    verdict_str = setup.get("verdict", "WATCHING")
+    score       = setup.get("score", 0)
+    eval_id     = setup.get("id")
 
-    # C4: setup-consumed guard — don't re-open on the same 4H evaluation
-    if eval_id and eval_id == state.get("last_opened_eval_id"):
-        state["last_action"] = f"{verdict} ({score}/100) — setup already consumed this bar"
-        _save_auto_state(state)
-        return {"enabled": True, "verdict": verdict, "score": score, "actions": actions}
-
-    # Staleness guard: only act on evaluations from the last 5 hours
-    eval_at = setup.get("evaluated_at")
-    if eval_at:
-        age_h = (now - datetime.fromisoformat(eval_at)).total_seconds() / 3600
-        if age_h > 5:
-            state["last_action"] = f"{verdict} ({score}/100) — evaluation stale ({age_h:.0f}h ago)"
-            _save_auto_state(state)
-            return {"enabled": True, "verdict": verdict, "actions": actions}
-
-    if verdict != "ENTRY_READY":
-        state["last_action"] = f"{verdict} ({score}/100) — waiting for ENTRY_READY"
-        _save_auto_state(state)
-        return {"enabled": True, "verdict": verdict, "score": score, "actions": actions}
-
-    # ── ENTRY_READY — compute params and gate checks ──────────────────────────
-    # Prefer live streamer price over stale evaluation price (H5 fix)
+    # Prefer live streamer price over the (possibly stale) evaluation price.
     from spot.streamer import get_prices as _gp
     _live = _gp().get("XRP") or {}
     xrp_price = (_live.get("price") if isinstance(_live, dict) else None) or setup.get("xrp_price")
-    if not xrp_price:
-        state["last_action"] = "ENTRY_READY but XRP price unavailable — skipped"
-        _save_auto_state(state)
-        return {"enabled": True, "verdict": verdict, "actions": actions}
 
     requested_size = state.get("auto_size_usd") or _DEFAULT_SIZE_USD
-    params         = _auto_params(setup, xrp_price, requested_size)
 
-    # H4: R:R gate — skip if reward:risk < 1.5
-    if not params.get("rr_ok"):
-        rr = params.get("rr_ratio", 0)
-        state["last_action"] = (f"ENTRY_READY but R:R {rr:.2f} < 1.5 — "
-                                f"stop ${params['stop']} vs TP1 ${params['tp1']} — skipped")
+    if xrp_price:
+        params = _auto_params(setup, xrp_price, requested_size)
+    else:
+        # No price to compute stop/TPs against. These are inert placeholders —
+        # the live_price_available gate below is what actually vetoes this;
+        # keeping the proposal well-formed means every other gate still runs
+        # and the audit trail records the full picture, not just the first
+        # thing that happened to break.
+        params = {"setup_type": setup.get("setup_type") or "B",
+                  "stop": 0.0, "tp1": 0.0, "tp2": 0.0, "tp3": 0.0, "rr_ratio": 0.0}
+
+    cooldown_until = None
+    if cooldown_until_str := state.get("cooldown_until"):
+        cooldown_until = datetime.fromisoformat(cooldown_until_str)
+
+    eval_at = setup.get("evaluated_at")
+    evaluated_at = datetime.fromisoformat(eval_at) if eval_at else None
+
+    proposal = OpenProposal(
+        eval_id=eval_id,
+        evaluated_at=evaluated_at,
+        verdict=verdict_str,
+        score=score,
+        setup_type=params["setup_type"],
+        entry_price=xrp_price,
+        requested_size_usd=requested_size,
+        stop=params["stop"],
+        tp1=params["tp1"],
+        tp2=params["tp2"],
+        tp3=params["tp3"],
+        rr_ratio=params.get("rr_ratio", 0.0),
+    )
+    risk_ctx = RiskContext(
+        now=now,
+        has_active_trade=False,  # the `active` branch above already returned if not
+        cooldown_until=cooldown_until,
+        last_opened_eval_id=state.get("last_opened_eval_id"),
+        live_price=xrp_price,
+    )
+    risk_verdict = risk_supervisor.review(proposal, risk_ctx)
+
+    if not risk_verdict.approved:
+        risk_supervisor.persist(proposal, risk_verdict)
+        state["last_action"] = f"{verdict_str} ({score}/100) — {risk_verdict.detail}"
         _save_auto_state(state)
-        return {"enabled": True, "verdict": verdict, "score": score, "actions": actions}
+        return {"enabled": True, "verdict": verdict_str, "score": score, "actions": actions}
 
-    # H3: Risk-based sizing — cap position so max loss ≤ RISK_BUDGET_USD
+    # ── Approved — size, then open ─────────────────────────────────────────────
+    # Risk-based sizing: cap the position so max loss ≤ RISK_BUDGET_USD. Not a
+    # veto — a good setup gets sized down rather than skipped.
     stop_pct = (xrp_price - params["stop"]) / xrp_price if xrp_price > params["stop"] else 0.05
     max_size_by_risk = round(_RISK_BUDGET_USD / stop_pct, 2) if stop_pct > 0 else requested_size
     final_size = round(min(requested_size, max_size_by_risk), 2)
-    params["size_usd"] = final_size
 
-    # ── Staged Auto-Entry: 20% at SETUP_FORMING, 40% at ENTRY_READY, 40% at confirmation ─────
-    # For now, we open with 20% at ENTRY_READY (first stage), then add stages in subsequent cycles
-    # when the trade is already open and price moves favorably
-    
-    # First stage: 20% of final size
+    # Staged auto-entry: 20% at ENTRY_READY (this open), 40%/40% added in
+    # later cycles as price moves favorably (handled in the `active` branch
+    # above).
     stage1_size = round(final_size * XRP_AUTO_STAGE_PCTS[0], 2)
-    
+
     try:
         open_trade(
             setup_type      = params["setup_type"],
-            stage1_price    = params["entry"],
+            stage1_price    = xrp_price,
             stage1_size_usd = stage1_size,
             stop            = params["stop"],
             tp1             = params["tp1"],
@@ -1228,22 +1260,26 @@ def run_auto_cycle() -> dict:
             tp3             = params["tp3"],
             notes           = (f"Auto-opened Stage 1/3 (20%) | score={score} | R:R={params['rr_ratio']:.2f} | "
                                f"risk_cap=${max_size_by_risk:.0f} | "
-                               f"{setup.get('setup_desc','')[:80]}"),
+                               f"{(setup.get('setup_desc') or '')[:80]}"),
         )
         msg = (f"AUTO-OPENED Stage 1/3 Setup {params['setup_type']} @ ${xrp_price:.4f} | "
                f"stop ${params['stop']} | TP1 ${params['tp1']} | TP2 ${params['tp2']} | TP3 ${params['tp3']} | "
                f"R:R {params['rr_ratio']:.2f} | size ${stage1_size:.0f} (20%)")
         actions.append(msg)
         state["last_action"]         = msg
-        state["last_opened_eval_id"] = eval_id   # C4: mark setup consumed
+        state["last_opened_eval_id"] = eval_id   # mark setup consumed
         state["auto_stage"]          = 1  # Track which stage we're at
         state["auto_total_size"]     = final_size
         state["auto_stage_sizes"]    = XRP_AUTO_STAGE_PCTS
         logger.info(f"XRP Swing AUTO: {msg}")
+        risk_supervisor.persist(proposal, risk_verdict, final_size_usd=final_size)
     except Exception as exc:
         err = f"Auto-open failed: {exc}"
         state["last_action"] = err
         logger.error(f"XRP Swing AUTO: {err}")
+        # The approve decision itself was correct — it's the broker-facing
+        # open that failed — so still record it, just with no final size.
+        risk_supervisor.persist(proposal, risk_verdict, final_size_usd=None)
 
     _save_auto_state(state)
-    return {"enabled": True, "verdict": verdict, "score": score, "actions": actions}
+    return {"enabled": True, "verdict": verdict_str, "score": score, "actions": actions}
