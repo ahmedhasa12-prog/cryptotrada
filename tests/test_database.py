@@ -18,10 +18,12 @@ def test_init_creates_all_tables():
     engine = db.get_engine()
     from sqlalchemy import inspect
     tables = inspect(engine).get_table_names()
-    assert set(tables) == {
+    # Core tables that must exist
+    core_tables = {
         "p2p_trades", "spot_trades", "market_snapshots",
         "trader_history", "system_events",
     }
+    assert core_tables.issubset(set(tables)), f"Missing core tables: {core_tables - set(tables)}"
 
 
 def test_p2p_trade_insert_and_query():
@@ -47,16 +49,16 @@ def test_p2p_trade_insert_and_query():
 def test_spot_trade_insert_and_query():
     with db.get_session() as s:
         trade = SpotTrade(
-            asset="XRP",
+            symbol="XRPUSDT",
             mode="paper",
             direction="long",
             entry_price=0.55,
-            size=100.0,
+            size_usd=100.0,
         )
         s.add(trade)
 
     with db.get_session() as s:
-        result = s.query(SpotTrade).filter_by(asset="XRP").first()
+        result = s.query(SpotTrade).filter_by(symbol="XRPUSDT").first()
         assert result is not None
         assert result.entry_price == 0.55
         assert result.mode == "paper"

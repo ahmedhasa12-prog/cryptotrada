@@ -10,6 +10,8 @@ from datetime import datetime
 from enum import Enum
 from typing import AsyncGenerator
 
+from loguru import logger
+
 
 class AlertLevel(str, Enum):
     INFO = "info"
@@ -53,6 +55,17 @@ class AlertBus:
         source: str = "system",
     ) -> None:
         await self.publish(Alert(message=message, level=level, source=source))
+        # Persist to DB so alert history survives page reloads and disconnections
+        try:
+            from data.database import get_session
+            from data.models import SpotAlertLog
+            with get_session() as s:
+                s.add(SpotAlertLog(
+                    alert_type=source,
+                    message=message,
+                ))
+        except Exception as e:
+            logger.warning(f"Alert DB persist failed (alert still delivered): {e}")
 
 
 _bus: AlertBus | None = None

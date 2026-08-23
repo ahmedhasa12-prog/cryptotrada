@@ -46,11 +46,11 @@
         <svg :viewBox="`0 0 ${W} ${H}`" preserveAspectRatio="none" class="chart-svg">
           <!-- zero / reference line at spread = 0 -->
           <line :x1="0" :y1="yPos(0)" :x2="W" :y2="yPos(0)"
-                stroke="#4a5568" stroke-width="0.5" stroke-dasharray="3,3"/>
+                style="stroke: var(--color-border-muted)" stroke-width="0.5" stroke-dasharray="3,3"/>
           <!-- average reference line -->
           <line v-if="ctx?.spread_avg != null"
                 :x1="0" :y1="yPos(ctx.spread_avg)" :x2="W" :y2="yPos(ctx.spread_avg)"
-                stroke="#718096" stroke-width="0.8" stroke-dasharray="5,3"/>
+                style="stroke: var(--color-text-disabled)" stroke-width="0.8" stroke-dasharray="5,3"/>
           <!-- area fill -->
           <path :d="areaPath" class="chart-area"/>
           <!-- line -->
@@ -218,38 +218,38 @@ onMounted(() => store.fetchAnalytics(days.value))
 </script>
 
 <style scoped>
-.analytics-card { display: flex; flex-direction: column; gap: 1rem; }
+.analytics-card { display: flex; flex-direction: column; gap: var(--space-lg); }
 
 /* Range toggle */
 .range-toggle { display: flex; gap: 0.35rem; }
 .range-btn {
-  background: #2d3748; border: 1px solid #4a5568;
-  color: #a0aec0; padding: 0.25rem 0.6rem;
-  border-radius: 0.35rem; cursor: pointer; font-size: 0.8rem; min-height: 32px;
+  background: var(--color-surface-raised); border: 1px solid var(--color-border-muted);
+  color: var(--color-text-secondary); padding: 0.3rem 0.7rem;
+  border-radius: 0.35rem; cursor: pointer; font-size: var(--font-size-sm-plus); min-height: 34px;
 }
-.range-btn.active { background: #2c4a6e; color: #90cdf4; border-color: #63b3ed; }
+.range-btn.active { background: var(--color-accent-muted); color: var(--color-accent-strong); border-color: var(--color-accent); }
 
 /* Context strip */
 .context-strip {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.6rem 1rem;
+  gap: var(--space-md) var(--space-lg);
 }
 @media (min-width: 480px) { .context-strip { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .context-strip { grid-template-columns: repeat(6, 1fr); } }
 
-.ctx-item   { display: flex; flex-direction: column; gap: 0.15rem; }
-.ctx-label  { font-size: 0.65rem; color: #718096; text-transform: uppercase; letter-spacing: 0.04em; }
-.ctx-val    { font-size: 0.95rem; font-weight: 600; }
-.ctx-val.positive { color: #68d391; }
-.ctx-val.negative { color: #fc8181; }
-.ctx-val.muted    { color: #718096; font-weight: 400; font-size: 0.8rem; }
-.ctx-val.range-val { font-size: 0.82rem; font-weight: 500; }
+.ctx-item   { display: flex; flex-direction: column; gap: 0.2rem; }
+.ctx-label  { font-size: var(--font-size-sm); color: var(--color-text-disabled); text-transform: uppercase; letter-spacing: 0.04em; }
+.ctx-val    { font-size: 1.05rem; font-weight: var(--font-weight-semibold); }
+.ctx-val.positive { color: var(--color-success-strong); }
+.ctx-val.negative { color: var(--color-danger); }
+.ctx-val.muted    { color: var(--color-text-disabled); font-weight: var(--font-weight-regular); font-size: var(--font-size-sm-plus); }
+.ctx-val.range-val { font-size: var(--font-size-sm-plus); font-weight: var(--font-weight-medium); }
 
 /* Section titles */
 .section-title {
-  font-size: 0.7rem; color: #718096;
-  text-transform: uppercase; letter-spacing: 0.04em;
-  margin-bottom: 0.4rem;
+  font-size: var(--font-size-base); color: var(--color-text-secondary); font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-sm);
 }
 .chart-section { display: flex; flex-direction: column; }
 
@@ -257,31 +257,31 @@ onMounted(() => store.fetchAnalytics(days.value))
 .chart-wrap { display: flex; align-items: stretch; gap: 0.4rem; }
 .chart-svg  { flex: 1; height: 80px; display: block; }
 .chart-area { fill: rgba(99,179,237,0.12); }
-.chart-line { fill: none; stroke: #63b3ed; stroke-width: 1.5; stroke-linejoin: round; }
-.chart-dot  { fill: #63b3ed; }
+.chart-line { fill: none; stroke: var(--color-accent); stroke-width: 1.5; stroke-linejoin: round; }
+.chart-dot  { fill: var(--color-accent); }
 
 .y-labels {
   display: flex; flex-direction: column;
   justify-content: space-between;
-  font-size: 0.6rem; color: #4a5568;
-  text-align: right; padding: 4px 0;
-  min-width: 36px;
+  font-size: var(--font-size-2xs-plus); color: var(--color-text-subtle);
+  text-align: end; padding: 4px 0;
+  min-width: 38px;
 }
 
 .chart-legend {
   display: flex; justify-content: space-between;
-  font-size: 0.65rem; color: #4a5568;
-  margin-top: 0.25rem;
+  font-size: var(--font-size-sm); color: var(--color-text-subtle);
+  margin-top: 0.3rem;
 }
-.legend-avg  { color: #718096; }
-.legend-note { color: #4a5568; }
+.legend-avg  { color: var(--color-text-disabled); }
+.legend-note { color: var(--color-text-subtle); }
 
 /* Hourly pattern bars */
 .pattern-grid {
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 64px;
+  height: 72px;
 }
 .pattern-slot { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; }
 .pattern-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
@@ -291,13 +291,13 @@ onMounted(() => store.fetchAnalytics(days.value))
   cursor: default;
 }
 .pattern-bar.unreliable { opacity: 0.3; }
-.pattern-label { font-size: 0.55rem; color: #4a5568; margin-top: 2px; white-space: nowrap; }
+.pattern-label { font-size: var(--font-size-2xs-plus); color: var(--color-text-subtle); margin-top: 3px; white-space: nowrap; }
 
 .pattern-legend {
-  display: flex; gap: 0.75rem; flex-wrap: wrap;
-  font-size: 0.65rem; color: #718096; margin-top: 0.4rem;
+  display: flex; gap: var(--space-md); flex-wrap: wrap;
+  font-size: var(--font-size-sm); color: var(--color-text-disabled); margin-top: var(--space-sm);
 }
-.legend-green { color: #68d391; }
-.legend-red   { color: #fc8181; }
-.legend-gray  { color: #4a5568; }
+.legend-green { color: var(--color-success-strong); }
+.legend-red   { color: var(--color-danger); }
+.legend-gray  { color: var(--color-text-subtle); }
 </style>

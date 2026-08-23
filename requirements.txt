@@ -1,6 +1,7 @@
 # Phase 1 — Foundation
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
+websockets>=12.0
 httpx>=0.24.1,<0.28
 apscheduler==3.10.4
 sqlalchemy>=2.0.36
@@ -12,8 +13,10 @@ pytest==8.2.0
 pytest-asyncio==0.23.6
 pytest-mock==3.14.0
 
-# Phase 4 additions (Spot module — add when starting Phase 4)
-# pandas>=2.2.3
-# numpy>=2.1.0
-# ta==0.11.0
-# python-binance==1.0.19
+# Spot / trading module
+pandas>=2.2.3
+numpy>=2.1.0
+ta==0.11.0
+
+# Fable 5 / Anthropic direct API
+anthropic>=0.47.0

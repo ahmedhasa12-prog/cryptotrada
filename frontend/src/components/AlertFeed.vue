@@ -2,7 +2,12 @@
   <div class="card alert-card">
     <div class="card-header">
       <h2>{{ t('alerts.title') }}</h2>
-      <button v-if="store.alerts.length" class="clear-btn" @click="clearAll">{{ t('alerts.clear') }}</button>
+      <div class="ah-controls">
+        <button class="mute-btn" :class="{ muted: store.muted }" @click="store.toggleMute()" :title="store.muted ? t('alerts.unmute') : t('alerts.mute')">
+          {{ store.muted ? '🔕' : '🔔' }}
+        </button>
+        <button v-if="store.alerts.length" class="clear-btn" @click="clearAll">{{ t('alerts.clear') }}</button>
+      </div>
     </div>
 
     <div class="alert-list">
@@ -51,19 +56,27 @@ function formatTime(iso) {
 </script>
 
 <style scoped>
+.ah-controls { display: flex; align-items: center; gap: 0.5rem; }
+.mute-btn {
+  background: none; border: 1px solid var(--color-border); border-radius: 6px;
+  cursor: pointer; font-size: var(--font-size-base); padding: 0.15rem 0.4rem; line-height: 1;
+  transition: border-color 0.15s;
+}
+.mute-btn.muted { border-color: var(--color-danger-strong); }
+.mute-btn:hover { border-color: var(--color-text-disabled); }
 .alert-top {
   display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem;
 }
 .alert-source {
-  font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.05em; color: #718096; background: #2d3748;
+  font-size: var(--font-size-2xs-plus); font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--color-text-disabled); background: var(--color-border);
   padding: 0.1rem 0.4rem; border-radius: 999px;
 }
-.alert-time { font-size: 0.72rem; color: #4a5568; margin-inline-start: auto; }
+.alert-time { font-size: var(--font-size-xs); color: var(--color-text-subtle); margin-inline-start: auto; }
 .dismiss {
-  background: none; border: none; color: #4a5568; cursor: pointer;
-  font-size: 0.9rem; min-width: 24px; min-height: 24px; margin-inline-start: 0.25rem; flex-shrink: 0;
+  background: none; border: none; color: var(--color-text-subtle); cursor: pointer;
+  font-size: var(--font-size-sm-plus); min-width: 24px; min-height: 24px; margin-inline-start: 0.25rem; flex-shrink: 0;
 }
-.dismiss:active { color: #e2e8f0; }
-.alert-msg { font-size: 0.875rem; line-height: 1.5; margin: 0; color: #e2e8f0; padding-inline-start: 1.6rem; }
+.dismiss:active { color: var(--color-text); }
+.alert-msg { font-size: var(--font-size-sm); line-height: 1.5; margin: 0; color: var(--color-text); padding-inline-start: 1.6rem; }
 </style>

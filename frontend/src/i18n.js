@@ -2,7 +2,7 @@ import { createI18n } from 'vue-i18n'
 import en from './locales/en.js'
 import ar from './locales/ar.js'
 
-const saved = localStorage.getItem('locale') || 'ar'
+const saved = localStorage.getItem('locale') || 'en'
 
 export const i18n = createI18n({
   legacy: false,

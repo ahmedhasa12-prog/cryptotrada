@@ -124,6 +124,59 @@ def get_market_context(days: int = 30) -> dict:
     }
 
 
+def get_weekday_patterns() -> list[dict]:
+    """Average spread grouped by day-of-week (0=Mon … 6=Sun) across all snapshots."""
+    with get_session() as s:
+        rows = (
+            s.query(MarketSnapshot.timestamp, MarketSnapshot.spread)
+            .filter(MarketSnapshot.spread.isnot(None))
+            .all()
+        )
+
+    buckets: dict[int, list[float]] = defaultdict(list)
+    for ts, spread in rows:
+        buckets[ts.weekday()].append(spread)
+
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    return [
+        {
+            "day":          day,
+            "day_key":      day_names[day],
+            "avg_spread":   round(sum(v) / len(v), 2) if (v := buckets[day]) else None,
+            "sample_count": len(buckets[day]),
+            "reliable":     len(buckets[day]) >= 3,
+        }
+        for day in range(7)
+    ]
+
+
+def get_heatmap() -> list[dict]:
+    """7×24 grid of avg spread for every (weekday, hour-of-day) combination."""
+    with get_session() as s:
+        rows = (
+            s.query(MarketSnapshot.timestamp, MarketSnapshot.spread)
+            .filter(MarketSnapshot.spread.isnot(None))
+            .all()
+        )
+
+    buckets: dict[tuple[int, int], list[float]] = defaultdict(list)
+    for ts, spread in rows:
+        buckets[(ts.weekday(), ts.hour)].append(spread)
+
+    result = []
+    for day in range(7):
+        for hour in range(24):
+            vals = buckets[(day, hour)]
+            result.append({
+                "day":          day,
+                "hour":         hour,
+                "avg_spread":   round(sum(vals) / len(vals), 2) if vals else None,
+                "sample_count": len(vals),
+                "reliable":     len(vals) >= 3,
+            })
+    return result
+
+
 def get_hourly_patterns() -> list[dict]:
     """
     Average spread grouped by hour-of-day (0–23) across all stored snapshots.

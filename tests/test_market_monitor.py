@@ -140,7 +140,7 @@ async def test_fetch_market_data_uses_mock_client():
 
     assert data.buy_best_rate == 610.0
     assert data.sell_best_rate == 590.0
-    assert data.spread == -20.0  # sell_best(590) - buy_best(610) = tight/uncrossed market
+    assert data.spread == 20.0  # buy_best(610) - sell_best(590) = spread
     assert len(data.buy_offers) == 2
     assert len(data.sell_offers) == 2
 
@@ -310,7 +310,7 @@ async def test_fetch_filters_restricted_from_best_rate():
     # sell_best should be 4071, not the restricted 4231
     assert data.sell_best_rate == 4071.0
     assert data.buy_best_rate == 4079.0
-    assert data.spread == pytest.approx(-8.0)  # sell(4071) - buy(4079) = tight market
+    assert data.spread == pytest.approx(8.0)  # buy(4079) - sell(4071) = tight market
     # All offers still present in the raw list
     assert len(data.sell_offers) == 3
 

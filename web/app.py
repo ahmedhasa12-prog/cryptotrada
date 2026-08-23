@@ -9,8 +9,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
-from web.routes import status, p2p, stream, rate_trend, binance_status, analytics
+from web.routes import status, p2p, stream, rate_trend, binance_status, analytics, spot, journal, xrp_swing, agents
 
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
@@ -56,12 +57,18 @@ def create_app(lifespan=None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+
     app.include_router(status.router)
     app.include_router(p2p.router)
     app.include_router(stream.router)
     app.include_router(rate_trend.router)
     app.include_router(binance_status.router)
     app.include_router(analytics.router)
+    app.include_router(spot.router)
+    app.include_router(journal.router)
+    app.include_router(xrp_swing.router)
+    app.include_router(agents.router)
 
     # Serve built Vue SPA in production (after `npm run build`)
     if FRONTEND_DIST.exists():

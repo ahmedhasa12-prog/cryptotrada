@@ -215,5 +215,22 @@ def test_period_stats_invalid_days(client):
 
 def test_stream_route_registered(client):
     # Verify the SSE route exists without consuming the infinite stream.
-    routes = {r.path for r in client.app.routes}
+    routes = set()
+    # Check both app.routes and app.router.routes (TestClient sometimes puts routes in different places)
+    for route_list in [client.app.routes, client.app.router.routes]:
+        for r in route_list:
+            if hasattr(r, 'path'):
+                routes.add(r.path)
+            elif hasattr(r, 'routes'):  # IncludedRouter
+                for sub_r in r.routes:
+                    if hasattr(sub_r, 'path'):
+                        routes.add(sub_r.path)
+                    elif hasattr(sub_r, 'original_router'):  # _IncludedRouter
+                        for inner_r in sub_r.original_router.routes:
+                            if hasattr(inner_r, 'path'):
+                                routes.add(inner_r.path)
+            elif hasattr(r, 'original_router'):  # _IncludedRouter directly in route_list
+                for inner_r in r.original_router.routes:
+                    if hasattr(inner_r, 'path'):
+                        routes.add(inner_r.path)
     assert "/api/stream" in routes

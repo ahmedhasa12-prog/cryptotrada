@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query
 
-from intelligence.analytics import get_spread_history, get_market_context, get_hourly_patterns
+from intelligence.analytics import (
+    get_spread_history, get_market_context, get_hourly_patterns,
+    get_weekday_patterns, get_heatmap,
+)
 
 router = APIRouter(prefix="/api/p2p/analytics")
 
@@ -21,3 +24,13 @@ def market_context(days: int = Query(default=30, ge=1, le=90)):
 @router.get("/patterns")
 def hourly_patterns():
     return get_hourly_patterns()
+
+
+@router.get("/weekday-patterns")
+def weekday_patterns():
+    return get_weekday_patterns()
+
+
+@router.get("/heatmap")
+def spread_heatmap():
+    return get_heatmap()

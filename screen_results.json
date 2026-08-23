@@ -1,0 +1,405 @@
+{
+  "run_at": "2026-05-25T11:43:27.860410+00:00",
+  "total_usdt_pairs": 435,
+  "quality_pool_size": 225,
+  "approach_a_fixed_15m": [
+    {
+      "symbol": "BTC",
+      "price": 77476.0,
+      "volume_m": 672.3,
+      "trades_k": 1918.6,
+      "change_pct": 0.33
+    },
+    {
+      "symbol": "ETH",
+      "price": 2118.57,
+      "volume_m": 431.2,
+      "trades_k": 2160.9,
+      "change_pct": -0.3
+    },
+    {
+      "symbol": "SOL",
+      "price": 85.99,
+      "volume_m": 181.9,
+      "trades_k": 465.5,
+      "change_pct": -0.64
+    },
+    {
+      "symbol": "ZEC",
+      "price": 668.41,
+      "volume_m": 157.4,
+      "trades_k": 444.8,
+      "change_pct": 3.8
+    },
+    {
+      "symbol": "NEAR",
+      "price": 2.438,
+      "volume_m": 102.6,
+      "trades_k": 686.5,
+      "change_pct": 2.09
+    },
+    {
+      "symbol": "XRP",
+      "price": 1.3599,
+      "volume_m": 90.4,
+      "trades_k": 342.4,
+      "change_pct": -0.55
+    },
+    {
+      "symbol": "SUI",
+      "price": 1.046,
+      "volume_m": 63.1,
+      "trades_k": 391.1,
+      "change_pct": -1.51
+    },
+    {
+      "symbol": "BNB",
+      "price": 661.8,
+      "volume_m": 47.0,
+      "trades_k": 508.3,
+      "change_pct": 0.06
+    },
+    {
+      "symbol": "DOGE",
+      "price": 0.10297,
+      "volume_m": 39.0,
+      "trades_k": 382.3,
+      "change_pct": -0.49
+    },
+    {
+      "symbol": "TRX",
+      "price": 0.3664,
+      "volume_m": 35.2,
+      "trades_k": 71.1,
+      "change_pct": 0.47
+    },
+    {
+      "symbol": "ONDO",
+      "price": 0.4291,
+      "volume_m": 33.3,
+      "trades_k": 254.4,
+      "change_pct": -2.7
+    },
+    {
+      "symbol": "WLD",
+      "price": 0.3046,
+      "volume_m": 26.4,
+      "trades_k": 344.9,
+      "change_pct": 1.03
+    },
+    {
+      "symbol": "NIL",
+      "price": 0.08405,
+      "volume_m": 24.1,
+      "trades_k": 664.2,
+      "change_pct": 24.54
+    },
+    {
+      "symbol": "GENIUS",
+      "price": 0.6688,
+      "volume_m": 22.1,
+      "trades_k": 255.4,
+      "change_pct": -12.04
+    },
+    {
+      "symbol": "ASTER",
+      "price": 0.708,
+      "volume_m": 21.4,
+      "trades_k": 67.6,
+      "change_pct": 0.0
+    },
+    {
+      "symbol": "TON",
+      "price": 1.799,
+      "volume_m": 20.8,
+      "trades_k": 162.1,
+      "change_pct": 0.11
+    },
+    {
+      "symbol": "UNI",
+      "price": 3.369,
+      "volume_m": 20.6,
+      "trades_k": 82.4,
+      "change_pct": -2.23
+    },
+    {
+      "symbol": "TAO",
+      "price": 278.9,
+      "volume_m": 19.9,
+      "trades_k": 130.0,
+      "change_pct": -0.43
+    },
+    {
+      "symbol": "ADA",
+      "price": 0.2453,
+      "volume_m": 18.7,
+      "trades_k": 59.9,
+      "change_pct": -0.12
+    },
+    {
+      "symbol": "U",
+      "price": 1.0009,
+      "volume_m": 18.4,
+      "trades_k": 16.9,
+      "change_pct": -0.02
+    },
+    {
+      "symbol": "XAUT",
+      "price": 4558.33,
+      "volume_m": 18.2,
+      "trades_k": 35.5,
+      "change_pct": 1.01
+    },
+    {
+      "symbol": "FIDA",
+      "price": 0.03646,
+      "volume_m": 15.3,
+      "trades_k": 159.9,
+      "change_pct": 2.59
+    },
+    {
+      "symbol": "DASH",
+      "price": 47.16,
+      "volume_m": 15.1,
+      "trades_k": 76.8,
+      "change_pct": 2.97
+    },
+    {
+      "symbol": "LINK",
+      "price": 9.564,
+      "volume_m": 15.0,
+      "trades_k": 106.7,
+      "change_pct": -0.24
+    },
+    {
+      "symbol": "SAGA",
+      "price": 0.02524,
+      "volume_m": 15.0,
+      "trades_k": 153.1,
+      "change_pct": 30.98
+    }
+  ],
+  "approach_b_dynamic_top30": [
+    {
+      "symbol": "BTC",
+      "price": 77476.0,
+      "volume_m": 672.3,
+      "trades_k": 1918.6,
+      "change_pct": 0.33
+    },
+    {
+      "symbol": "ETH",
+      "price": 2118.57,
+      "volume_m": 431.2,
+      "trades_k": 2160.9,
+      "change_pct": -0.3
+    },
+    {
+      "symbol": "SOL",
+      "price": 85.99,
+      "volume_m": 181.9,
+      "trades_k": 465.5,
+      "change_pct": -0.64
+    },
+    {
+      "symbol": "ZEC",
+      "price": 668.41,
+      "volume_m": 157.4,
+      "trades_k": 444.8,
+      "change_pct": 3.8
+    },
+    {
+      "symbol": "NEAR",
+      "price": 2.438,
+      "volume_m": 102.6,
+      "trades_k": 686.5,
+      "change_pct": 2.09
+    },
+    {
+      "symbol": "XRP",
+      "price": 1.3599,
+      "volume_m": 90.4,
+      "trades_k": 342.4,
+      "change_pct": -0.55
+    },
+    {
+      "symbol": "SUI",
+      "price": 1.046,
+      "volume_m": 63.1,
+      "trades_k": 391.1,
+      "change_pct": -1.51
+    },
+    {
+      "symbol": "BNB",
+      "price": 661.8,
+      "volume_m": 47.0,
+      "trades_k": 508.3,
+      "change_pct": 0.06
+    },
+    {
+      "symbol": "DOGE",
+      "price": 0.10297,
+      "volume_m": 39.0,
+      "trades_k": 382.3,
+      "change_pct": -0.49
+    },
+    {
+      "symbol": "TRX",
+      "price": 0.3664,
+      "volume_m": 35.2,
+      "trades_k": 71.1,
+      "change_pct": 0.47
+    },
+    {
+      "symbol": "ONDO",
+      "price": 0.4291,
+      "volume_m": 33.3,
+      "trades_k": 254.4,
+      "change_pct": -2.7
+    },
+    {
+      "symbol": "WLD",
+      "price": 0.3046,
+      "volume_m": 26.4,
+      "trades_k": 344.9,
+      "change_pct": 1.03
+    },
+    {
+      "symbol": "NIL",
+      "price": 0.08405,
+      "volume_m": 24.1,
+      "trades_k": 664.2,
+      "change_pct": 24.54
+    },
+    {
+      "symbol": "GENIUS",
+      "price": 0.6688,
+      "volume_m": 22.1,
+      "trades_k": 255.4,
+      "change_pct": -12.04
+    },
+    {
+      "symbol": "ASTER",
+      "price": 0.708,
+      "volume_m": 21.4,
+      "trades_k": 67.6,
+      "change_pct": 0.0
+    },
+    {
+      "symbol": "TON",
+      "price": 1.799,
+      "volume_m": 20.8,
+      "trades_k": 162.1,
+      "change_pct": 0.11
+    },
+    {
+      "symbol": "UNI",
+      "price": 3.369,
+      "volume_m": 20.6,
+      "trades_k": 82.4,
+      "change_pct": -2.23
+    },
+    {
+      "symbol": "TAO",
+      "price": 278.9,
+      "volume_m": 19.9,
+      "trades_k": 130.0,
+      "change_pct": -0.43
+    },
+    {
+      "symbol": "ADA",
+      "price": 0.2453,
+      "volume_m": 18.7,
+      "trades_k": 59.9,
+      "change_pct": -0.12
+    },
+    {
+      "symbol": "U",
+      "price": 1.0009,
+      "volume_m": 18.4,
+      "trades_k": 16.9,
+      "change_pct": -0.02
+    },
+    {
+      "symbol": "XAUT",
+      "price": 4558.33,
+      "volume_m": 18.2,
+      "trades_k": 35.5,
+      "change_pct": 1.01
+    },
+    {
+      "symbol": "FIDA",
+      "price": 0.03646,
+      "volume_m": 15.3,
+      "trades_k": 159.9,
+      "change_pct": 2.59
+    },
+    {
+      "symbol": "DASH",
+      "price": 47.16,
+      "volume_m": 15.1,
+      "trades_k": 76.8,
+      "change_pct": 2.97
+    },
+    {
+      "symbol": "LINK",
+      "price": 9.564,
+      "volume_m": 15.0,
+      "trades_k": 106.7,
+      "change_pct": -0.24
+    },
+    {
+      "symbol": "SAGA",
+      "price": 0.02524,
+      "volume_m": 15.0,
+      "trades_k": 153.1,
+      "change_pct": 30.98
+    },
+    {
+      "symbol": "PAXG",
+      "price": 4566.08,
+      "volume_m": 14.3,
+      "trades_k": 28.2,
+      "change_pct": 0.65
+    },
+    {
+      "symbol": "LTC",
+      "price": 52.82,
+      "volume_m": 13.0,
+      "trades_k": 112.7,
+      "change_pct": -1.38
+    },
+    {
+      "symbol": "SAHARA",
+      "price": 0.03542,
+      "volume_m": 12.8,
+      "trades_k": 308.5,
+      "change_pct": 6.21
+    },
+    {
+      "symbol": "AVAX",
+      "price": 9.401,
+      "volume_m": 12.4,
+      "trades_k": 163.9,
+      "change_pct": 0.58
+    },
+    {
+      "symbol": "RENDER",
+      "price": 2.065,
+      "volume_m": 12.1,
+      "trades_k": 57.8,
+      "change_pct": 4.56
+    }
+  ],
+  "rejection_summary": {
+    "too few trades": 172,
+    "NFT/fan token": 12,
+    "stablecoin": 11,
+    "meme/low-quality token": 8,
+    "leveraged/inverse token": 3,
+    "fiat forex pair": 1,
+    "price too low": 1,
+    "wrapped token": 1,
+    "staking derivative": 1
+  }
+}

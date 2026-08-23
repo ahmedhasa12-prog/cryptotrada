@@ -44,11 +44,11 @@ class Offer:
 @dataclass
 class MarketData:
     timestamp: datetime
-    buy_offers: list[Offer]   # merchants SELLING USDT (buyers of fiat)
-    sell_offers: list[Offer]  # merchants BUYING USDT (sellers of fiat)
-    buy_best_rate: float | None
-    sell_best_rate: float | None
-    spread: float | None
+    buy_offers: list[Offer]   # merchants BUYING USDT from you (they pay SDG, tradeType="BUY")
+    sell_offers: list[Offer]  # merchants SELLING USDT to you (they want SDG, tradeType="SELL")
+    buy_best_rate: float | None  # highest price buyers offer (what you receive when selling USDT)
+    sell_best_rate: float | None  # lowest price sellers charge (what you pay when buying USDT)
+    spread: float | None  # buy_best - sell_best: positive = opportunity to buy low & sell high
 
 
 def _build_payload(asset: str, fiat: str, trade_type: str, rows: int = 10) -> dict:
@@ -147,7 +147,7 @@ async def fetch_market_data(
 
     buy_best = active_buy[0].price if active_buy else None
     sell_best = active_sell[0].price if active_sell else None
-    spread = round(sell_best - buy_best, 2) if (buy_best and sell_best) else None
+    spread = round(buy_best - sell_best, 2) if (buy_best and sell_best) else None
 
     return MarketData(
         timestamp=datetime.utcnow(),

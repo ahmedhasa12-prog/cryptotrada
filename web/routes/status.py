@@ -7,6 +7,7 @@ from config import OperatingMode, Availability
 from data.database import get_session
 from data.models import SystemEvent
 from web.state import get_state
+from spot.trading_modes import TradingMode, get_trading_mode, set_trading_mode as _set_trading_mode
 
 router = APIRouter(prefix="/api")
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/api")
 class StatusResponse(BaseModel):
     mode: str
     availability: str
+    trading_mode: str
 
 
 class SetModeRequest(BaseModel):
@@ -24,10 +26,19 @@ class SetAvailabilityRequest(BaseModel):
     availability: str
 
 
+class SetTradingModeRequest(BaseModel):
+    trading_mode: str
+
+
 @router.get("/status", response_model=StatusResponse)
 def get_status():
     state = get_state()
-    return StatusResponse(mode=state.mode.value, availability=state.availability.value)
+    trading_mode = get_trading_mode()
+    return StatusResponse(
+        mode=state.mode.value,
+        availability=state.availability.value,
+        trading_mode=trading_mode.value
+    )
 
 
 @router.post("/mode", response_model=StatusResponse)
@@ -49,7 +60,11 @@ def set_mode(req: SetModeRequest):
             mode=new_mode.value,
         ))
 
-    return StatusResponse(mode=state.mode.value, availability=state.availability.value)
+    return StatusResponse(
+        mode=state.mode.value,
+        availability=state.availability.value,
+        trading_mode=get_trading_mode().value
+    )
 
 
 @router.post("/availability", response_model=StatusResponse)
@@ -70,4 +85,33 @@ def set_availability(req: SetAvailabilityRequest):
             mode=state.mode.value,
         ))
 
-    return StatusResponse(mode=state.mode.value, availability=state.availability.value)
+    return StatusResponse(
+        mode=state.mode.value,
+        availability=state.availability.value,
+        trading_mode=get_trading_mode().value
+    )
+
+
+@router.post("/trading-mode", response_model=StatusResponse)
+def set_trading_mode_route(req: SetTradingModeRequest):
+    try:
+        new_mode = TradingMode(req.trading_mode)
+    except ValueError:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Invalid trading mode: {req.trading_mode}")
+
+    _set_trading_mode(new_mode)
+
+    state = get_state()
+    with get_session() as s:
+        s.add(SystemEvent(
+            event_type="trading_mode_change",
+            description=f"Trading mode changed to {new_mode.value}",
+            mode=new_mode.value,
+        ))
+
+    return StatusResponse(
+        mode=state.mode.value,
+        availability=state.availability.value,
+        trading_mode=get_trading_mode().value
+    )

@@ -63,3 +63,46 @@ async def verify_connection() -> dict:
 
     error = resp.json().get("msg", f"HTTP {resp.status_code}")
     return {"ok": False, "error": error}
+
+
+async def fetch_p2p_order_history(
+    trade_type: str = "SELL",
+    page: int = 1,
+    rows: int = 100,
+) -> dict:
+    """
+    GET /sapi/v1/c2c/orderMatch/listUserOrderHistory
+    Returns your completed P2P trades. trade_type: "BUY" | "SELL".
+    """
+    cfg = get_config()
+    if not cfg.binance_api_key or not cfg.binance_secret_key:
+        return {"ok": False, "error": "API key not configured — add to .env"}
+
+    params: dict = {
+        "tradeType": trade_type,
+        "page": page,
+        "rows": rows,
+        "timestamp": int(time.time() * 1000),
+        "recvWindow": 5000,
+    }
+    params["signature"] = _sign(cfg.binance_secret_key, params)
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(
+            f"{_BASE}/sapi/v1/c2c/orderMatch/listUserOrderHistory",
+            params=params,
+            headers=_auth_headers(cfg.binance_api_key),
+        )
+
+    if resp.status_code != 200:
+        return {"ok": False, "error": f"HTTP {resp.status_code}: {resp.text[:200]}"}
+
+    data = resp.json()
+    if data.get("code") != "000000":
+        return {"ok": False, "error": data.get("message", "Unknown Binance error")}
+
+    return {
+        "ok": True,
+        "data": data.get("data", []),
+        "total": data.get("total", 0),
+    }
