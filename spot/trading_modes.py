@@ -437,16 +437,17 @@ class XRPSwingAgent(BaseAgent):
     
     async def _on_start(self) -> None:
         logger.info("XRPSwingAgent: Initializing...")
-        # Enable auto mode if configured
-        if self.config.config.get("auto_enabled", False):
-            from spot.xrp_swing import enable_auto
-            size = self.config.config.get("auto_size_usd", 300.0)
-            enable_auto(size)
-    
+        # Auto-trading's on/off state lives in XRPAutoState (data/models.py),
+        # controlled only via enable_auto()/disable_auto() — deliberately not
+        # touched here. It must survive whatever happens to this agent's own
+        # lifecycle: a deliberate stop, a crash, a redeploy, the watchdog in
+        # run.sh restarting the process. None of those are "the user changed
+        # their mind about trading" — conflating the two meant a single
+        # incidental restart silently wiped a live enabled flag in production
+        # (see the commit that removed the old auto_enabled/_on_stop logic).
+
     async def _on_stop(self) -> None:
         logger.info("XRPSwingAgent: Cleaning up...")
-        from spot.xrp_swing import disable_auto
-        disable_auto()
     
     async def _run_main_cycle(self, ctx: dict) -> dict:
         from spot.xrp_swing import run_auto_cycle
