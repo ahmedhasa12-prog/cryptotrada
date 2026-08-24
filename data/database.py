@@ -58,6 +58,12 @@ _MIGRATIONS = [
     # this runs — no positions can slip open on the same deploy that adds it.
     ("xrp_auto_state",      "shadow_mode",        "INTEGER DEFAULT 1"),
     ("xrp_risk_decisions",  "shadowed",           "INTEGER DEFAULT 0"),
+    # ATR/EMA at entry — see the XRPSwingTrade docstring in models.py. NULL on
+    # every trade opened before this migration; that's correct, not a gap to
+    # backfill, since those trades' entry conditions were never recorded.
+    ("xrp_swing_trades",    "atr_at_open",        "REAL"),
+    ("xrp_swing_trades",    "atr_pct_at_open",    "REAL"),
+    ("xrp_swing_trades",    "ema200_at_open",     "REAL"),
 ]
 
 

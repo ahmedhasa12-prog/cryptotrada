@@ -348,6 +348,16 @@ class XRPSwingTrade(Base):
     fg_at_open:        Mapped[int | None]   = mapped_column(Integer)
     notes:             Mapped[str | None]   = mapped_column(Text)
 
+    # ATR/EMA at the moment of entry. Computed at evaluation time but never
+    # persisted here before — _trade_to_dict() had nothing to return for
+    # atr_val/atr_pct/ema200, so every reader of an active trade
+    # (_monitor_trade's staging and trailing-arm logic, regime detection)
+    # silently got None and skipped. Populated once, at open_trade(); a
+    # trade's entry conditions don't change after the fact.
+    atr_at_open:      Mapped[float | None] = mapped_column(Float)
+    atr_pct_at_open:  Mapped[float | None] = mapped_column(Float)
+    ema200_at_open:   Mapped[float | None] = mapped_column(Float)
+
 
 class XRPAutoState(Base):
     """

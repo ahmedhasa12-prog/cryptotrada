@@ -598,6 +598,7 @@ def _trade_to_dict(row: XRPSwingTrade) -> dict:
         "stop_current":   row.stop_current,
         "tp1_price":      row.tp1_price,
         "tp2_price":      row.tp2_price,
+        "tp3_price":      row.tp3_price,
         "stop_at_be":     row.stop_at_be,
         "trailing_active": row.trailing_active,
         "trailing_pct":   row.trailing_pct,
@@ -606,6 +607,8 @@ def _trade_to_dict(row: XRPSwingTrade) -> dict:
         "tp1_pnl_usd":    row.tp1_pnl_usd,
         "tp2_hit_at":     row.tp2_hit_at.isoformat() if row.tp2_hit_at else None,
         "tp2_pnl_usd":    row.tp2_pnl_usd,
+        "tp3_hit_at":     row.tp3_hit_at.isoformat() if row.tp3_hit_at else None,
+        "tp3_pnl_usd":    row.tp3_pnl_usd,
         "status":         row.status,
         "xrp_price_at_open": row.xrp_price_at_open,
         "btc_dom_at_open": row.btc_dom_at_open,
@@ -614,6 +617,12 @@ def _trade_to_dict(row: XRPSwingTrade) -> dict:
         "live_price":     live,
         "live_pnl_pct":   live_pnl_pct,
         "live_pnl_usd":   live_pnl_usd,
+        # Entry-time ATR/EMA — powers staged entry, the trailing arm, and
+        # regime detection in _monitor_trade(). None on trades opened before
+        # this was tracked; each reader already guards for that.
+        "atr_val":        row.atr_at_open,
+        "atr_pct":        row.atr_pct_at_open,
+        "ema200":         row.ema200_at_open,
     }
 
 
@@ -625,6 +634,18 @@ def open_trade(setup_type: str, stage1_price: float, stage1_size_usd: float,
     macro = get_latest_macro() or {}
     prices = get_prices()
     xrp_price = (prices.get("XRP") or {}).get("price")
+
+    # Fresh ATR/EMA at the exact moment of entry, computed independently of
+    # whatever produced the stop/TP levels above. Deliberately not threaded
+    # through _auto_params or run_auto_cycle's stored-setup dict — that dict
+    # never carries atr_val (get_latest_setup() doesn't return it), and
+    # piping ATR into _auto_params would silently change which branch it
+    # takes and therefore its R:R math, which is explicitly out of scope
+    # here. This call exists purely so the trade record has real numbers for
+    # _trade_to_dict() to return — reviving staged entry, the trailing arm,
+    # and regime detection, all of which read atr_val/ema200 off the trade,
+    # not off the proposal that opened it.
+    entry_setup = _check_xrp_setup(stage1_price) if stage1_price else {}
 
     stage = {"price": stage1_price, "size_usd": stage1_size_usd,
              "time": datetime.utcnow().isoformat()}
@@ -643,6 +664,9 @@ def open_trade(setup_type: str, stage1_price: float, stage1_size_usd: float,
             xrp_price_at_open= xrp_price,
             btc_dom_at_open  = macro.get("btc_dominance"),
             fg_at_open       = macro.get("fear_greed_value"),
+            atr_at_open      = entry_setup.get("atr_val"),
+            atr_pct_at_open  = entry_setup.get("atr_pct"),
+            ema200_at_open   = entry_setup.get("ema200"),
             notes            = notes,
         )
         s.add(trade)
@@ -735,16 +759,21 @@ def close_trade(trade_id: int, exit_price: float, reason: str = "manual") -> dic
             raise ValueError(f"No open trade #{trade_id}")
 
         pnl_pct = (exit_price - (trade.avg_entry or exit_price)) / (trade.avg_entry or exit_price) * 100
-        # Remaining fraction: 60% if TP1 not hit, 35% if TP1 hit, 25% if both hit
+        # Remaining fraction, matching hit_tp's actual 30/30/40 split: 100% if
+        # nothing hit, 70% after TP1, 40% after TP2, 0% after TP3 (nothing left
+        # to close — this path is only reached if something calls close_trade
+        # without going through the TP3 auto-close in _monitor_trade).
         fraction = 1.0
         if trade.tp1_hit_at:
-            fraction = 0.60
+            fraction = 0.70
         if trade.tp2_hit_at:
-            fraction = 0.25
+            fraction = 0.40
+        if trade.tp3_hit_at:
+            fraction = 0.0
         pnl_usd = round((trade.total_size_usd or 0) * fraction * pnl_pct / 100, 2)
 
         # Add any banked TP P&L
-        banked = (trade.tp1_pnl_usd or 0.0) + (trade.tp2_pnl_usd or 0.0)
+        banked = (trade.tp1_pnl_usd or 0.0) + (trade.tp2_pnl_usd or 0.0) + (trade.tp3_pnl_usd or 0.0)
         total_pnl = round(pnl_usd + banked, 2)
         total_pct = round(total_pnl / (trade.total_size_usd or 1) * 100, 2)
 
@@ -1033,11 +1062,16 @@ def _monitor_trade(active: dict) -> list[str]:
         hit_tp(trade_id, 2, live)
         actions.append(f"TP2 HIT @ ${live:.4f} → trailing activated")
 
-    # ── TP3 ───────────────────────────────────────────────────────────────────
+    # ── TP3 — the final 40% closes here, nothing left to trail ────────────────
     if (active.get("tp2_hit_at") and not active.get("tp3_hit_at")
             and active.get("tp3_price") and live >= active["tp3_price"]):
         hit_tp(trade_id, 3, live)
-        actions.append(f"TP3 HIT @ ${live:.4f} → final target reached")
+        # Without this, the position stays "open" at 0% remaining until an
+        # unrelated trailing-stop check eventually fires and close_trade()
+        # books a phantom slice of a position that no longer exists.
+        close_trade(trade_id, live, reason="tp")
+        actions.append(f"TP3 HIT @ ${live:.4f} → final target reached, position closed")
+        return actions
 
     return actions
 
@@ -1073,7 +1107,11 @@ def _auto_params(setup: dict, xrp_price: float, size_usd: float) -> dict:
     else:
         # Fallback to original logic
         if st == "A":
-            ema200 = setup.get("ema200") or 0.0
+            # get_latest_setup() returns this key as "xrp_ema200", not
+            # "ema200" — reading the wrong key here meant Setup A's stop
+            # silently always fell through to the support-based fallback
+            # below, never the EMA-anchored one the branch exists for.
+            ema200 = setup.get("xrp_ema200") or setup.get("ema200") or 0.0
             stop   = round(ema200 * 0.99, 4) if ema200 else round(sup * 0.985, 4)
         else:
             stop = round(sup * 0.985, 4)  # 1.5% below nearest support
