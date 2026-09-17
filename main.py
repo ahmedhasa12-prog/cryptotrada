@@ -347,7 +347,11 @@ def main() -> None:
         
         scheduler.shutdown(wait=False)
 
-    app = create_app(lifespan=lifespan)
+# Export the FastAPI app for ASGI servers (Railway, gunicorn, etc.)
+app = create_app(lifespan=lifespan)
+
+
+def main():
     port = int(os.environ.get("PORT", 8001))
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
 
