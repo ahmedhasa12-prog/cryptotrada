@@ -1,1 +1,1 @@
-web: .venv/bin/python main.py
+web: python3 main.py
