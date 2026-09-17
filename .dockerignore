@@ -1,23 +1,65 @@
-.env
+# Python
+__pycache__
+*.py[cod]
+*.pyo
+*.egg-info
+dist
+build
+.venv
+venv
+env
+
+# Node
+node_modules
+frontend/node_modules
+
+# Database
 *.db
 *.db-shm
 *.db-wal
-__pycache__
-.venv
-node_modules
-*.pyc
-*.pyo
+
+# Logs
 *.log
-*.md
-.DS_Store
-.git
-.github
+logs/
+
+# IDE
+.idea
 .vscode
 .claude
-backups
-tests
-memory
-logs
-dist/
-build/
-.pytest_cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project files not needed in Docker
+backups/
+tests/
+memory/
+*.md
+.env
+.git
+.github
+
+# Large data files
+data/*.json
+data/*.yaml
+data/*.log
+data/trading.db
+data/backtest_results.json
+data/paper_account.json
+data/bot_state.json
+data/checkpoint.json
+data/validation.json
+data/cap_preregistration.yaml
+data/cap_state.json
+data/xrp_swing_auto.json
+
+# Frontend build output (will be rebuilt)
+frontend/dist/
+frontend/assets/
+
+# Large directories
+bot/
+intelligence/
+binance/
+p2p/
