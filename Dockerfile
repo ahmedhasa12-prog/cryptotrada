@@ -29,3 +29,4 @@ COPY tests/ ./tests/
 
 EXPOSE 8001
 CMD ["python3", "main.py"]
+# Rebuild trigger: Thu Sep 17 13:01:39 EEST 2026
