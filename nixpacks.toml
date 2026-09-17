@@ -1,0 +1,19 @@
+[variables]
+  NODE_VERSION = "20"
+  PYTHON_VERSION = "3.14"
+
+[nix]
+  enableCache = true
+
+[packages]
+  nodejs = "nodejs_20"
+  python = "python314"
+  pip = "pip"
+
+[build]
+  only = ["frontend/dist", "web", "data", "spot", "main.py", "requirements.txt"]
+
+[source]
+  type = "git"
+  url = "https://github.com/ahmedhasa12-prog/cryptotrada"
+  branch = "master"
