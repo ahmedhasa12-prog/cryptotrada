@@ -48,7 +48,7 @@
     }
   },
   "xrp_swing": {
-    "enabled": false,
+    "enabled": true,
     "main_cycle_interval_sec": 300,
     "fast_cycle_interval_sec": 30,
     "config": {
@@ -84,7 +84,7 @@
     }
   },
   "sol_swing": {
-    "enabled": false,
+    "enabled": true,
     "main_cycle_interval_sec": 300,
     "fast_cycle_interval_sec": 30,
     "config": {
@@ -97,7 +97,7 @@
     }
   },
   "link_swing": {
-    "enabled": false,
+    "enabled": true,
     "main_cycle_interval_sec": 300,
     "fast_cycle_interval_sec": 30,
     "config": {
