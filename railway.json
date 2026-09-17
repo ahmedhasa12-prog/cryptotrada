@@ -1,9 +1,0 @@
-{
-  "$schema": "https://schemas.railway.app/source.json",
-  "source": {
-    "type": "docker"
-  },
-  "build": {
-    "dockerfile": "Dockerfile"
-  }
-}
