@@ -174,6 +174,8 @@ export default {
   trading_modes: {
     auto_trend: 'Auto Trend (Multi-coin)',
     xrp_swing: 'XRP Swing',
+    sol_swing: 'SOL Swing',
+    link_swing: 'LINK Swing',
     p2p_only: 'P2P Only',
     manual: 'Manual',
   },
@@ -798,6 +800,8 @@ export default {
     trading_agents: 'Trading Agents',
     auto_trend: 'Auto Trend',
     xrp_swing: 'XRP Swing',
+    sol_swing: 'SOL Swing',
+    link_swing: 'LINK Swing',
     p2p_market: 'P2P Market',
     manual: 'Manual',
     start: 'Start',

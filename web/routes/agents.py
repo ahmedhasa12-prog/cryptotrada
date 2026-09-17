@@ -103,6 +103,9 @@ def _compute_total_pnl_usd(agent_type: AgentType) -> float:
         elif agent_type is AgentType.SOL_SWING:
             # SOL trades tracked separately; return 0.0 for now (real trades tracked in validation.json)
             total = 0.0
+        elif agent_type is AgentType.LINK_SWING:
+            # LINK trades tracked separately; return 0.0 for now
+            total = 0.0
         else:
             return 0.0
     return round(total or 0.0, 2)

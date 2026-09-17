@@ -1,0 +1,127 @@
+{
+  "auto_trend": {
+    "enabled": false,
+    "main_cycle_interval_sec": 600,
+    "fast_cycle_interval_sec": 30,
+    "config": {
+      "hotness_min": 11,
+      "timing_soft_min": 40,
+      "max_positions": 6,
+      "equity_usd": 5000,
+      "risk_pct_per_trade": 0.01,
+      "max_position_frac": 0.2,
+      "atr_stop_k": 1.5,
+      "atr_trail_k": 1.0,
+      "atr_tp_hard_k": 3.5,
+      "min_stop_pct": 2.0,
+      "max_stop_pct": 8.0,
+      "tp1_r_mult": 1.0,
+      "tp2_r_mult": 2.0,
+      "tp3_r_mult": 3.0,
+      "tp1_size_pct": 0.3,
+      "tp2_size_pct": 0.3,
+      "tp3_size_pct": 0.4,
+      "vol_timeout_atr_k": 0.5,
+      "vol_timeout_hours": 4,
+      "max_hold_atr_mult": 10.0,
+      "vol_ratio_min": 1.5,
+      "btc_sma50_graduated": true,
+      "btc_sma50_min_dist": 0.0,
+      "btc_sma50_max_dist": 0.1,
+      "multi_tf_confirm": true,
+      "unrealized_dd_limit": 200.0,
+      "daily_loss_limit_usd": 60.0,
+      "weekly_loss_limit_usd": 150.0,
+      "correlation_cluster_limit": 3,
+      "portfolio_dd_limit_pct": 0.1,
+      "kelly_sizing_enabled": true,
+      "kelly_win_rate": 0.55,
+      "kelly_win_loss_ratio": 1.5,
+      "kelly_max_fraction": 0.25,
+      "cooldown_minutes": 60,
+      "btc_trend_gate": true,
+      "atmosphere_gate": false,
+      "atmosphere_boost": true,
+      "strategy_owner": "original_inkling_2026",
+      "data_integrity": "real_binance_ohlcv_websocket_only",
+      "main_cycle_interval_sec": 600
+    }
+  },
+  "xrp_swing": {
+    "enabled": false,
+    "main_cycle_interval_sec": 300,
+    "fast_cycle_interval_sec": 30,
+    "config": {
+      "auto_enabled": true,
+      "auto_size_usd": 300.0,
+      "xrp_atr_period": 14,
+      "xrp_tp_atr_mult": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "xrp_conviction_mult": {
+        "A": 1.0,
+        "B": 0.75,
+        "C": 0.5
+      },
+      "xrp_early_entry_pct": 0.2,
+      "xrp_auto_stage_pcts": [
+        0.2,
+        0.4,
+        0.4
+      ],
+      "xrp_trail_arm_atr": 1.5,
+      "xrp_trail_atr_base": 1.0,
+      "xrp_trail_chop_mult": 1.5,
+      "xrp_trail_trend_mult": 0.5,
+      "xrp_cooldown_bear_hours": 24,
+      "xrp_cooldown_bull_hours": 6,
+      "risk_budget_usd": 20.0,
+      "cooldown_hours": 4,
+      "strategy_owner": "adopted_phase3",
+      "data_integrity": "real_binance_ohlcv_websocket_only"
+    }
+  },
+  "sol_swing": {
+    "enabled": false,
+    "main_cycle_interval_sec": 300,
+    "fast_cycle_interval_sec": 30,
+    "config": {
+      "strategy_owner": "original_breakout",
+      "volume_spike_threshold": 2.5,
+      "breakout_above_high_pct": 0.03,
+      "fixed_stop_pct": 0.03,
+      "tp_projected_pct": 0.08,
+      "data_integrity": "real_binance_ohlcv_websocket_only"
+    }
+  },
+  "link_swing": {
+    "enabled": false,
+    "main_cycle_interval_sec": 300,
+    "fast_cycle_interval_sec": 30,
+    "config": {
+      "strategy_owner": "original_breakout",
+      "volume_spike_threshold": 2.5,
+      "breakout_above_high_pct": 0.03,
+      "fixed_stop_pct": 0.03,
+      "tp_projected_pct": 0.08,
+      "link_atr_period": 14,
+      "link_trail_k": 1.0,
+      "link_sl_k": 1.5,
+      "data_integrity": "real_binance_ohlcv_websocket_only"
+    }
+  },
+  "p2p_market": {
+    "enabled": false,
+    "main_cycle_interval_sec": 300,
+    "fast_cycle_interval_sec": 30,
+    "config": {}
+  },
+  "manual": {
+    "enabled": false,
+    "main_cycle_interval_sec": 300,
+    "fast_cycle_interval_sec": 30,
+    "config": {}
+  }
+}

@@ -181,6 +181,7 @@ function getOverviewComponent() {
     case 'auto_trend': return Analytics  // simplified: analytics view for agent
     case 'xrp_swing': return Analytics
     case 'sol_swing': return Analytics
+    case 'link_swing': return Analytics
     case 'p2p_market': return Analytics
     case 'manual': return Analytics
     default: return ComingSoon
@@ -192,6 +193,7 @@ function getConfigComponent() {
     case 'auto_trend': return AgentConfigSummary
     case 'xrp_swing': return AgentConfigSummary
     case 'sol_swing': return AgentConfigSummary
+    case 'link_swing': return AgentConfigSummary
     default: return AgentConfigSummary
   }
 }

@@ -19,5 +19,11 @@ frontend/dist/
 
 # Runtime state written by the running app — data/*.py (models, database
 # session management) is source and must stay tracked; these are generated.
-data/*.json
-data/*.yaml
+data/backtest_results.json
+data/paper_account.json
+data/bot_state.json
+data/checkpoint.json
+data/validation.json
+data/cap_preregistration.yaml
+data/cap_state.json
+data/xrp_swing_auto.json

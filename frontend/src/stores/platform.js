@@ -46,7 +46,7 @@ export const usePlatformStore = defineStore('platform', () => {
     alerts.value.some(a => a.level === 'critical')
   )
 
-  const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing']
+  const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing', 'link_swing']
 
   const runningAgents = computed(() =>
     agents.value.filter(a => a.state === 'running')
@@ -292,7 +292,7 @@ export const usePlatformStore = defineStore('platform', () => {
     spreadHistory, marketContext, hourlyPatterns,
     macro, narratives, watchlist, weekdayPatterns, heatmap,
     spotTiming, spotTimingStatus,
-    agents, runningAgents, pausedAgents, stoppedAgents,
+    agents, runningAgents, pausedAgents, stoppedAgents, tradingAgents,
     fetchSpotTimingStatus, startSpotBackfill, fetchSpotTimingPatterns, fetchSignals,
     fetchBotStatus, toggleBot, seedBotTest, fetchLeaderboard, fetchBotHistory,
     modeLabel, availabilityLabel, isCriticalAlert,

@@ -63,7 +63,7 @@ const router = useRouter()
 
 interface Activity {
   id: number | string
-  agent: 'auto_trend' | 'xrp_swing' | 'p2p_market' | 'manual'
+  agent: 'auto_trend' | 'xrp_swing' | 'sol_swing' | 'link_swing' | 'p2p_market' | 'manual'
   action: 'OPENED' | 'CLOSED' | 'TP1_HIT' | 'TP2_HIT' | 'TP3_HIT' | 'STAGE_ADDED' | 'PAUSED' | 'RESUMED' | 'ERROR'
   symbol?: string
   price?: number

@@ -34,7 +34,7 @@ import { useRouter } from 'vue-router'
 import { usePlatformStore } from '@/stores/platform'
 import AgentCard from '@/components/agent/AgentCard.vue'
 
-const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing']
+const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing', 'link_swing']
 const { t } = useI18n()
 const router = useRouter()
 const platformStore = usePlatformStore()

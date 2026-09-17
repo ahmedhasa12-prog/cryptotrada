@@ -174,6 +174,8 @@ export default {
   trading_modes: {
     auto_trend: 'الاتجاه التلقائي (متعدد العملات)',
     xrp_swing: 'تداول XRP',
+    sol_swing: 'تداول SOL',
+    link_swing: 'تداول LINK',
     p2p_only: 'P2P فقط',
     manual: 'يدوي',
   },
@@ -798,6 +800,8 @@ export default {
     trading_agents: 'الوكلاء التداوليون',
     auto_trend: 'الاتجاه التلقائي',
     xrp_swing: 'تداول XRP',
+    sol_swing: 'تداول SOL',
+    link_swing: 'تداول LINK',
     p2p_market: 'سوق P2P',
     manual: 'يدوي',
     start: 'بدء',

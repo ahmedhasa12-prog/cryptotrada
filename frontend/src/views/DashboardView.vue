@@ -48,7 +48,7 @@ import { useUIStore } from '@/stores/ui'
 import AgentCard from '@/components/agent/AgentCard.vue'
 import ActivityFeed from '@/components/ui/ActivityFeed.vue'
 
-const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing']
+const TRADING_AGENT_TYPES = ['xrp_swing', 'sol_swing', 'link_swing']
 const { t } = useI18n()
 const router = useRouter()
 const platformStore = usePlatformStore()

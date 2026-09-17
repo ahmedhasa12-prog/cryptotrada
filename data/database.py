@@ -82,24 +82,30 @@ def _migrate(engine: Engine) -> None:
 
 
 def init_db(db_path: str = "data/trading.db") -> Engine:
-    """Create tables and return the engine. Safe to call multiple times."""
+    """Create tables and return the engine. Safe to call multiple times.
+    Supports SQLite (default) and PostgreSQL via DATABASE_URL env var."""
     global _engine, _SessionLocal
 
-    is_memory = db_path == ":memory:"
-    if not is_memory:
-        os.makedirs(os.path.dirname(db_path) if os.path.dirname(db_path) else ".", exist_ok=True)
-    url = f"sqlite:///{db_path}"
-    if is_memory:
-        # StaticPool: all threads share one connection so in-memory DB is visible everywhere
+    # If DATABASE_URL is set, use it (PostgreSQL); otherwise fall back to SQLite
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        url = database_url
+    else:
+        is_memory = db_path == ":memory:"
+        if not is_memory:
+            os.makedirs(os.path.dirname(db_path) if os.path.dirname(db_path) else ".", exist_ok=True)
+        url = f"sqlite:///{db_path}"
+        is_memory = False
+
+    if url.startswith("postgresql"):
+        kwargs = {"pool_pre_ping": True}
+    elif url == ":memory:":
         kwargs = {"connect_args": {"check_same_thread": False}, "poolclass": StaticPool}
     else:
-        # NullPool: each call gets a fresh SQLite connection and closes it immediately.
-        # No pool limit → no exhaustion errors when FastAPI threads + executor threads
-        # + scheduler jobs all hit the DB concurrently. Safe with WAL journal mode.
         kwargs = {"connect_args": {"check_same_thread": False}, "poolclass": NullPool}
     _engine = create_engine(url, **kwargs)
     # WAL mode: safe concurrent reads + crash recovery without corruption
-    if not is_memory:
+    if not url.startswith("postgresql") and url != ":memory:":
         with _engine.connect() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL"))
             conn.execute(text("PRAGMA synchronous=NORMAL"))  # safe + faster than FULL
@@ -107,7 +113,7 @@ def init_db(db_path: str = "data/trading.db") -> Engine:
     Base.metadata.create_all(_engine)
     _migrate(_engine)
     _SessionLocal = sessionmaker(bind=_engine, autoflush=False, autocommit=False)
-    logger.info(f"Database initialised at {db_path}")
+    logger.info(f"Database initialised at {url}")
     return _engine
 
 

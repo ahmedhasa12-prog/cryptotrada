@@ -5,7 +5,7 @@
 # — force-kills and restarts if health check stops responding (hung event loop)
 # — exits cleanly on Ctrl+C or SIGTERM
 
-HEALTH_URL="http://localhost:8000/api/journal/summary"
+HEALTH_URL="http://localhost:8001/api/journal/summary"
 STARTUP_WAIT=15     # seconds to let the server boot before health checks begin
 HEALTH_INTERVAL=60  # how often to ping the health URL (seconds)
 MAX_FAILURES=3      # consecutive failures before force-kill + restart

@@ -50,6 +50,19 @@
     <!-- Divider -->
     <li class="sidenav-divider" v-show="!collapsed"></li>
 
+    <!-- P2P -->
+    <li class="sidenav-item">
+      <router-link
+        to="/p2p"
+        class="sidenav-link"
+        :class="{ active: isActive('/p2p') }"
+        @click="$emit('navigate')"
+      >
+        <span class="sidenav-link__icon" aria-hidden="true">💱</span>
+        <span v-show="!collapsed" class="sidenav-link__text">{{ t('navigation.p2p_market') }}</span>
+      </router-link>
+    </li>
+
     <!-- Intelligence -->
     <li class="sidenav-item">
       <router-link
@@ -112,7 +125,7 @@ const emit = defineEmits<{
   navigate: []
 }>()
 
-const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing']
+const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing', 'link_swing']
 const agents = computed(() => platformStore.tradingAgents)
 
 function isActive(path: string): boolean {
@@ -124,6 +137,7 @@ function agentIcon(type: string): string {
     auto_trend: '📈',
     xrp_swing: '🌊',
     sol_swing: '⚡',
+    link_swing: '🔗',
   }
   return icons[type] || '🤖'
 }
@@ -133,6 +147,7 @@ function agentName(type: string): string {
     auto_trend: 'Auto Trend',
     xrp_swing: 'XRP Swing',
     sol_swing: 'SOL Swing',
+    link_swing: 'LINK Swing',
   }
   return names[type] || type
 }

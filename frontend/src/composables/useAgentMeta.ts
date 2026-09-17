@@ -6,6 +6,8 @@ import { useI18n } from 'vue-i18n'
 const ICONS: Record<string, string> = {
   auto_trend: '📈',
   xrp_swing: '🌊',
+  sol_swing: '⚡',
+  link_swing: '🔗',
   p2p_market: '🤝',
   manual: '👁️',
 }
@@ -13,6 +15,8 @@ const ICONS: Record<string, string> = {
 const NAMES: Record<string, string> = {
   auto_trend: 'Auto Trend',
   xrp_swing: 'XRP Swing',
+  sol_swing: 'SOL Swing',
+  link_swing: 'LINK Swing',
   p2p_market: 'P2P Market',
   manual: 'Manual',
 }

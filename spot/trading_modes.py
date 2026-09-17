@@ -57,6 +57,7 @@ class AgentType(str, Enum):
     AUTO_TREND = "auto_trend"
     XRP_SWING = "xrp_swing"
     SOL_SWING = "sol_swing"
+    LINK_SWING = "link_swing"
     P2P_MARKET = "p2p_market"
     MANUAL = "manual"
 
@@ -526,6 +527,29 @@ class SOLSwingAgent(BaseAgent):
         return []
 
 
+class LINKSwingAgent(BaseAgent):
+    """Chainlink (LINK) Swing specialist agent (breakout-confirmation strategy)."""
+    
+    def __init__(self, config: AgentConfig, event_bus: EventBus, get_context: Callable[[], dict]):
+        super().__init__(AgentType.LINK_SWING, config, event_bus, get_context)
+    
+    async def _on_start(self) -> None:
+        logger.info("LINKSwingAgent: Starting autonomous LINK trading (breakout strategy)")
+    
+    async def _on_stop(self) -> None:
+        logger.info("LINKSwingAgent: Stopping autonomous LINK trading")
+    
+    async def _run_main_cycle(self, ctx: dict) -> dict:
+        from spot.link_swing import evaluate_link_swing
+        result = evaluate_link_swing()
+        actions = [{"agent": "link_swing", "signal": result.get("signal"), "reason": result.get("reason"),
+                    "entry_pct": result.get("entry_pct"), "live_price": result.get("live_price")}]
+        return {"entries": actions, "exits": [], "actions": actions, "metrics": {"signal": result.get("signal")}}
+    
+    async def _run_fast_cycle(self, ctx: dict) -> list[dict]:
+        return []
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # AGENT REGISTRY
 # ══════════════════════════════════════════════════════════════════════════════
@@ -576,6 +600,13 @@ class AgentRegistry:
         sol_config = self._configs.get(AgentType.SOL_SWING, AgentConfig(agent_type=AgentType.SOL_SWING, enabled=True))
         self._agents[AgentType.SOL_SWING] = SOLSwingAgent(
             sol_config,
+            self.event_bus,
+            self.get_context,
+        )
+        # LINK Swing agent — Chainlink breakout specialist
+        link_config = self._configs.get(AgentType.LINK_SWING, AgentConfig(agent_type=AgentType.LINK_SWING, enabled=True))
+        self._agents[AgentType.LINK_SWING] = LINKSwingAgent(
+            link_config,
             self.event_bus,
             self.get_context,
         )
