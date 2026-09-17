@@ -606,20 +606,20 @@ onUnmounted(() => {
 }
 
 /* RTL support */
-:global([dir="rtl"]) .header-left {
+[dir="rtl"] .header-left {
   flex-direction: row-reverse;
 }
 
-:global([dir="rtl"]) .header-right {
+[dir="rtl"] .header-right {
   flex-direction: row-reverse;
 }
 
-:global([dir="rtl"]) .notifications-dropdown {
+[dir="rtl"] .notifications-dropdown {
   right: auto;
   left: 0;
 }
 
-:global([dir="rtl"]) .drawer-backdrop {
+[dir="rtl"] .drawer-backdrop {
   /* Handled by logical properties */
 }
 </style>

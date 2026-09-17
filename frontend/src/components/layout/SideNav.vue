@@ -373,30 +373,30 @@ function closeDrawer() {
    RTL SUPPORT
    ════════════════════════════════════════════════════════════════════════ */
 
-:global([dir="rtl"]) .mobile-drawer {
+[dir="rtl"] .mobile-drawer {
   left: auto;
   right: 0;
   border-right: none;
   border-left: 1px solid var(--color-border);
 }
 
-:global([dir="rtl"]) .mobile-drawer--open {
+[dir="rtl"] .mobile-drawer--open {
   transform: translateX(0);
 }
 
-:global([dir="rtl"]) .mobile-drawer-enter-from,
-:global([dir="rtl"]) .mobile-drawer-leave-to {
+[dir="rtl"] .mobile-drawer-enter-from,
+[dir="rtl"] .mobile-drawer-leave-to {
   transform: translateX(100%);
 }
 
-:global([dir="rtl"]) .sidenav {
+[dir="rtl"] .sidenav {
   left: auto;
   right: 0;
   border-right: none;
   border-left: 1px solid var(--color-border);
 }
 
-:global([dir="rtl"]) .sidenav-backdrop {
+[dir="rtl"] .sidenav-backdrop {
   /* Same */
 }
 </style>

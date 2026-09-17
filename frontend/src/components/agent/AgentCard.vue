@@ -21,20 +21,8 @@
           <h3 class="agent-card__name">{{ displayName }}</h3>
           <div class="agent-card__state" :class="stateClass">
             <span class="agent-card__dot" aria-hidden="true"></span>
-            <span>{{ stateLabel }}</span>
+            <span>{{ stateLabel(agent.state) }}</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Quick metrics -->
-      <div class="agent-card__quick-metrics" v-if="showMetrics && agent.metrics">
-        <div class="metric">
-          <span class="metric-value">{{ formatMetric(agent.metrics.cycles_completed) }}</span>
-          <span class="metric-label">{{ t('agents.cycles') }}</span>
-        </div>
-        <div class="metric">
-          <span class="metric-value">{{ formatMetric(agent.metrics.fast_cycles_completed) }}</span>
-          <span class="metric-label">{{ t('agents.fast_cycles') }}</span>
         </div>
       </div>
     </div>
@@ -45,22 +33,10 @@
     <!-- Main Metrics -->
     <div class="agent-card__metrics" v-if="showMetrics && agent.metrics">
       <div class="metric-row">
-        <div class="metric-card">
-          <span class="metric-card__value" :class="pnlClass">{{ formatPnL(agent.metrics.total_pnl_usd || 0) }}</span>
-          <span class="metric-card__label">{{ t('agents.total_pnl') }}</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-card__value">{{ agent.metrics.total_entries || 0 }}</span>
-          <span class="metric-card__label">{{ t('agents.total_entries') }}</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-card__value">{{ agent.metrics.total_exits || 0 }}</span>
-          <span class="metric-card__label">{{ t('agents.total_exits') }}</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-card__value">{{ formatUptime(agent.metrics.uptime_started_at) }}</span>
-          <span class="metric-card__label">{{ t('agents.uptime') }}</span>
-        </div>
+        <MetricTile :label="t('agents.total_pnl')" :value="formatPnL(agent.metrics.total_pnl_usd || 0)" variant="auto" />
+        <MetricTile :label="t('agents.total_entries')" :value="agent.metrics.total_entries || 0" />
+        <MetricTile :label="t('agents.total_exits')" :value="agent.metrics.total_exits || 0" />
+        <MetricTile :label="t('agents.uptime')" :value="formatUptime(agent.metrics.uptime_started_at)" />
       </div>
     </div>
 
@@ -135,6 +111,28 @@
       </button>
     </div>
 
+    <!-- Backtest & Strategy Metrics -->
+    <div class="agent-card__backtest" v-if="agent.config?.config?.strategy_owner || agent.metrics?.backtest_win_rate !== undefined">
+      <div class="metric-row metric-row--backtest">
+        <div class="backtest-tag" :class="agent.config?.config?.strategy_owner ? 'backtest-tag--original' : 'backtest-tag--adopt'">
+          {{ agent.config?.config?.strategy_owner ? (agent.config.config.strategy_owner.includes('original') ? 'ORIGINAL' : 'ADOPTED') : 'NEW' }}
+        </div>
+        <div v-if="agent.metrics?.backtest_win_rate !== undefined" class="backtest-stat">
+          <span class="label">Win Rate</span>
+          <span class="value" :class="agent.metrics.backtest_win_rate >= 0.5 ? 'positive' : 'negative'">
+            {{ (agent.metrics.backtest_win_rate * 100).toFixed(0) }}%
+          </span>
+        </div>
+        <div v-if="agent.metrics?.profit_factor !== undefined" class="backtest-stat">
+          <span class="label">PF</span>
+          <span class="value">{{ agent.metrics.profit_factor.toFixed(2) }}</span>
+        </div>
+        <div class="backtest-tag backtest-tag--real">
+          <span>REAL DATA ONLY</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Loading overlay -->
     <div v-if="loading" class="agent-card__loading">
       <div class="spinner" aria-hidden="true"></div>
@@ -146,8 +144,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAgentMeta } from '@/composables/useAgentMeta'
+import { formatPnL, formatUptime } from '@/composables/useFormatters'
+import MetricTile from '@/components/ui/MetricTile.vue'
 
 const { t } = useI18n()
+const { agentIcon, agentDisplayName, stateLabel } = useAgentMeta()
 
 interface AgentMetrics {
   cycles_completed: number
@@ -198,62 +200,10 @@ const emit = defineEmits<{
   action: [{ agentType: string; action: 'start' | 'stop' | 'pause' | 'resume' }]
 }>()
 
-const iconMap: Record<string, string> = {
-  auto_trend: '📈',
-  xrp_swing: '🌊',
-  p2p_market: '🤝',
-  manual: '👁️',
-}
-
-const nameMap: Record<string, string> = {
-  auto_trend: 'Auto Trend',
-  xrp_swing: 'XRP Swing',
-  p2p_market: 'P2P Market',
-  manual: 'Manual',
-}
-
-const icon = computed(() => iconMap[props.agent.agent_type] || '🤖')
-const displayName = computed(() => nameMap[props.agent.agent_type] || props.agent.agent_type)
-
+const icon = computed(() => agentIcon(props.agent.agent_type))
+const displayName = computed(() => agentDisplayName(props.agent.agent_type))
 const stateClass = computed(() => `agent-card--${props.agent.state}`)
-const stateLabel = computed(() => {
-  const labels: Record<string, string> = {
-    running: 'Running',
-    paused: 'Paused',
-    stopped: 'Stopped',
-    error: 'Error',
-    starting: 'Starting...',
-    stopping: 'Stopping...',
-  }
-  return labels[props.agent.state] || props.agent.state
-})
-
-const ariaLabel = computed(() => `${displayName.value}, ${stateLabel.value}`)
-
-const pnlClass = computed(() => {
-  const pnl = props.agent.metrics?.total_pnl_usd || 0
-  return pnl >= 0 ? 'positive' : 'negative'
-})
-
-function formatMetric(value: number): string {
-  if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M'
-  if (value >= 1000) return (value / 1000).toFixed(1) + 'K'
-  return value.toString()
-}
-
-function formatPnL(value: number): string {
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function formatUptime(startedAt: string | null): string {
-  if (!startedAt) return '—'
-  const diff = Date.now() - new Date(startedAt).getTime()
-  if (diff < 60000) return `${Math.floor(diff / 1000)}s`
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`
-  return `${Math.floor(diff / 86400000)}d`
-}
+const ariaLabel = computed(() => `${displayName.value}, ${stateLabel(props.agent.state)}`)
 </script>
 
 <style scoped>
@@ -465,36 +415,6 @@ function formatUptime(startedAt: string | null): string {
   50% { opacity: 0.6; transform: scale(0.9); }
 }
 
-/* Quick metrics */
-.agent-card__quick-metrics {
-  display: flex;
-  gap: var(--space-4);
-  flex-shrink: 0;
-}
-
-.agent-card__quick-metrics .metric {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-1);
-  min-width: 60px;
-}
-
-.agent-card__quick-metrics .metric-value {
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-}
-
-.agent-card__quick-metrics .metric-label {
-  font-size: var(--text-2xs);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 /* Divider */
 .agent-card__divider {
   height: 1px;
@@ -520,42 +440,6 @@ function formatUptime(startedAt: string | null): string {
   }
 }
 
-.metric-card {
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  text-align: center;
-  transition: all var(--transition-fast);
-}
-
-.metric-card:hover {
-  border-color: var(--color-brand);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-
-.metric-card__value {
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-  line-height: var(--line-height-tight);
-}
-
-.metric-card__value.positive { color: var(--color-success); }
-.metric-card__value.negative { color: var(--color-danger); }
-
-.metric-card__label {
-  font-size: var(--text-2xs);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
 
 /* Error */
 .agent-card__error {
@@ -602,6 +486,73 @@ function formatUptime(startedAt: string | null): string {
   }
 }
 
+/* Backtest & Strategy Tags */
+.agent-card__backtest {
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px dashed var(--color-border);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), rgba(244, 63, 94, 0.05));
+}
+
+.metric-row--backtest {
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: var(--space-2);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.backtest-tag {
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-bold);
+  font-size: var(--text-2xs);
+}
+
+.backtest-tag--original {
+  background: var(--color-brand-subtle);
+  color: var(--color-brand-strong);
+  border: 1px solid var(--color-brand);
+}
+
+.backtest-tag--adopt {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.backtest-tag--real {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid #10b981;
+  white-space: nowrap;
+}
+
+.backtest-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.backtest-stat .label {
+  color: var(--color-text-secondary);
+  font-size: 9px;
+}
+
+.backtest-stat .value {
+  font-weight: var(--font-bold);
+  font-size: 12px;
+}
+
+.backtest-stat .value.positive { color: #10b981; }
+.backtest-stat .value.negative { color: #f43f5e; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 /* Loading */
 .agent-card__loading {
   position: absolute;
@@ -630,8 +581,4 @@ function formatUptime(startedAt: string | null): string {
   to { transform: rotate(360deg); }
 }
 
-/* RTL support */
-:global([dir="rtl"]) .agent-card__quick-metrics .metric {
-  align-items: flex-start;
-}
 </style>

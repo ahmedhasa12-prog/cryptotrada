@@ -313,30 +313,30 @@ function agentStateLabel(state: string): string {
 }
 
 /* Collapsed state */
-:global(.sidenav--collapsed) .sidenav-link {
+.sidenav--collapsed .sidenav-link {
   justify-content: center;
   padding: var(--space-2);
 }
 
-:global(.sidenav--collapsed) .sidenav-link__text,
-:global(.sidenav--collapsed) .sidenav-link__badge,
-:global(.sidenav--collapsed) .sidenav-section,
-:global(.sidenav--collapsed) .sidenav-divider {
+.sidenav--collapsed .sidenav-link__text,
+.sidenav--collapsed .sidenav-link__badge,
+.sidenav--collapsed .sidenav-section,
+.sidenav--collapsed .sidenav-divider {
   display: none;
 }
 
-:global(.sidenav--collapsed) .sidenav-link.active::before {
+.sidenav--collapsed .sidenav-link.active::before {
   display: none;
 }
 
-:global(.sidenav--collapsed) .sidenav-link__icon {
+.sidenav--collapsed .sidenav-link__icon {
   width: 28px;
   height: 28px;
   font-size: var(--text-xl);
 }
 
 /* RTL support */
-:global([dir="rtl"]) .sidenav-link.active::before {
+[dir="rtl"] .sidenav-link.active::before {
   left: auto;
   right: 0;
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);

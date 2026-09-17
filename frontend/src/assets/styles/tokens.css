@@ -94,18 +94,18 @@
   --color-danger: #fc8181;
   --color-danger-strong: #e53e3e;
   --color-danger-vivid: #c53030;
-  --color-danger-crimson: #e84250.
+  --color-danger-crimson: #e84250;
   --color-danger-mid: #742a2a;
-  --color-danger-bg: #2d1616.
-  --color-danger-tint: #fed7d7.
-  --color-danger-alert: #ef4444.
-  --color-danger-soft: #f87171.
-  --color-danger-intense: #7b1010.
-  --color-danger-intense-alt: #9b1c1c.
+  --color-danger-bg: #2d1616;
+  --color-danger-tint: #fed7d7;
+  --color-danger-alert: #ef4444;
+  --color-danger-soft: #f87171;
+  --color-danger-intense: #7b1010;
+  --color-danger-intense-alt: #9b1c1c;
 
-  --color-info: #63b3ed.
-  --color-info-bg: #101e34.
-  --color-info-border: #3a5a98.
+  --color-info: #63b3ed;
+  --color-info-bg: #101e34;
+  --color-info-border: #3a5a98;
 
   /* ── Spacing Scale ───────────────────────────────────────────────────── */
   --space-0: 0;
@@ -150,6 +150,7 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
   --font-family-base: var(--font-sans);
 
+  --text-2xs: 0.6875rem;   /* 11px */
   --text-xs: 0.75rem;      /* 12px */
   --text-sm: 0.875rem;     /* 14px */
   --text-base: 1rem;       /* 16px */
@@ -308,19 +309,19 @@
 
   --color-danger: #dc2626;
   --color-danger-strong: #ef4444;
-  --color-danger-vivid: #f87171.
-  --color-danger-crimson: #f87171.
-  --color-danger-mid: #fecaca.
-  --color-danger-bg: #fef2f2.
-  --color-danger-tint: #fecaca.
-  --color-danger-alert: #ef4444.
-  --color-danger-soft: #f87171.
-  --color-danger-intense: #fee2e2.
-  --color-danger-intense-alt: #fecaca.
+  --color-danger-vivid: #f87171;
+  --color-danger-crimson: #f87171;
+  --color-danger-mid: #fecaca;
+  --color-danger-bg: #fef2f2;
+  --color-danger-tint: #fecaca;
+  --color-danger-alert: #ef4444;
+  --color-danger-soft: #f87171;
+  --color-danger-intense: #fee2e2;
+  --color-danger-intense-alt: #fecaca;
 
-  --color-info: #2563eb.
-  --color-info-bg: #dbeafe.
-  --color-info-border: #93c5fd.
+  --color-info: #2563eb;
+  --color-info-bg: #dbeafe;
+  --color-info-border: #93c5fd;
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);

@@ -2,7 +2,8 @@
 
 **This is the FIRST document any new session should read.** Read it completely before doing anything else.
 
-**Last verified:** 2026-09-16
+**Last verified:** 2026-09-17
+**Current Phase:** Phase 4 — Agent framework complete and tested
 **Project:** CryptoTrada — Cryptocurrency Trading Intelligence Platform
 **Owner's goal:** Autonomous paper-trading agents that close trades with real, repeatable profits and a consistent strategy, with auto-resume on rate limits.
 **Owner's style:** Full freedom to change anything, but wants small verified steps. Run tests after every change.
@@ -14,11 +15,11 @@
 ```bash
 # 1. Verify the project runs
 cd /Users/ahmedabdelwahid/projects/cryptotrada
-python3 -m pytest tests/ -q          # Should show 234 passed
+python3 -m pytest tests/ -q          # Should show 250 passed
 python3 main.py &                     # Start the platform on :8000
 curl http://localhost:8000/api/status # Should return JSON
 
-# 2. Read THIS file and SESSION_CONTEXT.md
+# 2. Read THIS file
 # 3. Check the live platform: http://localhost:8000
 # 4. Check git log: git --no-pager log --oneline -10
 ```
@@ -62,7 +63,7 @@ curl http://localhost:8000/api/status # Should return JSON
 ### Test Suite
 ```
 python3 -m pytest tests/ -q
-# Expected: 234 passed, 13635 warnings (datetime.utcnow deprecation)
+# Expected: 250 passed, 15052 warnings (datetime.utcnow deprecation)
 ```
 
 ### Agent Status (via API)
@@ -105,14 +106,18 @@ curl -s http://localhost:8000/api/status
 - Staged auto-entry (20%/40%/40%), regime-based cooldowns (24h bear / 6h bull)
 - TP3 support, regime-aware trailing, ATR-based stop
 
-### Phase 4: Agent Framework ✅ (partial)
+### Phase 4: Agent Framework ✅ (COMPLETE)
 - `BaseAgent` ABC with lifecycle: STOPPED→STARTING→RUNNING→PAUSED→STOPPING→ERROR
 - Concrete agents: `AutoTrendAgent`, `XRPSwingAgent`, `SOLSwingAgent`, `P2PMarketAgent`, `ManualAgent`
 - `AgentRegistry` with start/stop/pause/resume/config + persistence to `data/agent_configs.json`
 - `EventBus` for inter-agent communication
 - `AgentConfig`, `AgentMetrics`, `AgentStatus` dataclasses
 - REST API at `/api/agents/` with full CRUD
-- **BUT:** 12 tests were broken by partial wiring (KIMI_HANDOVER.md documents this)
+- **All 5 agents instantiate and run correctly** — verified via API and integration tests
+- **Bug fixed**: `update_agent_config` now properly updates top-level `AgentConfig` fields
+- **Bug fixed**: `SOLSwingAgent` constructor cleaned up (removed unused `strategy` param)
+- **Refactored**: `agent3_sol_swing.py` moved to `spot/sol_swing.py`
+- **16 new integration tests** added in `tests/test_trading_modes.py`
 
 ### Rate-Limit Resilience ✅
 - Exponential backoff on 429s (1.5s base, 60s cap)
@@ -132,11 +137,11 @@ curl -s http://localhost:8000/api/status
 
 ## 🔴 Known Issues & Gotchas
 
-### 1. Phase 4 Agent Wiring (INCOMPLETE)
-- `trading_modes.py` has Strategy interface + concrete agents, but wiring is partial
-- 12 tests were broken when the strategy ABC was added
-- Need to verify which tests still fail and fix the concrete agent wiring
-- **Do not just read the KIMI_HANDOVER.md — check current test failures first**
+### Phase 4 Agent Wiring ✅ (RESOLVED)
+- All concrete agent wiring is complete and verified
+- Agent lifecycle works end-to-end via API (start/stop/pause/resume)
+- 250 tests pass including 16 new agent integration tests
+- **No remaining wiring issues**
 
 ### 2. datetime.utcnow() Deprecation
 - 13635 deprecation warnings across test suite
@@ -148,16 +153,11 @@ curl -s http://localhost:8000/api/status
 - Platform starts in `manual` mode — no auto-trading happens
 - To enable agents, update `agent_configs.json` or use the API: `POST /api/agents/{type}/start`
 
-### 4. SESSION_CONTEXT.md Is Outdated
-- Says "168 tests passing" — actual count is **234**
-- Says "Phase 3 Complete, Ready for Phase 4" — Phase 4 agent framework exists but needs completion
-- **Always verify state via API/tests, don't trust SESSION_CONTEXT.md alone**
-
-### 5. Dead Orphan Files
+### 4. Dead Orphan Files
 - `solana_trader.py` at project root — dead code, do NOT touch unless asked
-- `agent1_swing_explorer.py`, `agent3_sol_swing.py` — legacy/experimental
+- `agent1_swing_explorer.py` at project root — legacy/experimental (imports now from `spot.sol_swing`)
 
-### 6. .env Contains Real API Keys
+### 5. .env Contains Real API Keys
 - Binance API key and secret are in `.env`
 - OpenRouter API key is in `.env`
 - **Never commit `.env`** — it's in `.gitignore`
@@ -198,6 +198,8 @@ The project has a DSH goal set. Check with `get_goal` for the exact objective.
 |------|-------|---------|
 | `main.py` | 355 | Entry point, scheduler, lifespan |
 | `spot/trading_modes.py` | 821 | Agent framework (BaseAgent, agents, registry, event bus) |
+| `spot/sol_swing.py` | 71 | SOL swing strategy (moved from root) |
+| `spot/__init__.py` | 33 | Package exports |
 | `spot/auto_trader.py` | ~900 | Enhanced spot auto-trader logic |
 | `spot/xrp_swing.py` | ~850 | XRP swing specialist logic |
 | `spot/positions.py` | ~200 | Position management helpers |
@@ -277,14 +279,13 @@ Format: `[YYYY-MM-DD (model)] What happened. What's next.`
 - 2025-09-13 (openrouter/z-ai/glm-5.2): Confirmed same state
 - 2025-09-13 (openai/inkling): Added clean review + auto-retry; user said "let's explore enhancements and efficiency!"
 - 2025-09-16 (n/a): Phase 4 agent framework completed (BaseAgent, AutoTrendAgent, XRPSwingAgent, SOLSwingAgent, P2PMarketAgent, ManualAgent, AgentRegistry, EventBus); REST API at /api/agents/; UI redesigned with agent cards, strategy badges, backtest metrics
+- 2025-09-17 (n/a): Phase 4 cleanup complete — moved agent3_sol_swing.py to spot/sol_swing.py, fixed SOLSwingAgent constructor, fixed update_agent_config bug, added 16 integration tests (250 total), created HANDOFF.md as canonical session handoff, fixed agent lifecycle via API verified end-to-end
 
 ---
 
 ## 🔗 Related Files
 
-- `KIMI_HANDOVER.md` — Previous session handover (from 2025-09-12, contains historical context)
-- `SESSION_CONTEXT.md` — More detailed phase breakdown (may be outdated)
-- `REFACTORING_PLAN.md` — Full roadmap (Phases 1-5, still relevant)
+- `REFACTORING_PLAN.md` — Full roadmap (Phases 1-5, still relevant as reference)
 - `UI_REBUILD_BRIEF.md` — Frontend rebuild brief (Phase 3 components still needed)
 - `UI_REDESIGN_PLAN.md` — Design tokens, RTL groundwork, old redesign plan
 - `binance_trading_platform_PRD.md` — Product requirements document (30KB)

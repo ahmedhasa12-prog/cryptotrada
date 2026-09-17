@@ -65,7 +65,20 @@ def evaluation_is_fresh(proposal: OpenProposal, ctx: RiskContext) -> Check:
         return vetoed(
             "evaluation_is_fresh", VetoReason.EVALUATION_STALE, "no evaluation timestamp"
         )
-    age_h = (ctx.now - proposal.evaluated_at).total_seconds() / 3600
+    # Normalise naive/aware mismatch: stored durations from the DB come back naive
+    # (datetime.utcnow() default in the model) while ctx.now is timezone-aware.
+    # Subtracting them directly raised a TypeError on every auto-cycle, which the
+    # fail-closed supervisor translated into a spurious veto. Treat any naive
+    # timestamp as UTC before computing the age.
+    evaluated_at = proposal.evaluated_at
+    now = ctx.now
+    if evaluated_at.tzinfo is None:
+        from datetime import timezone as _tz
+        evaluated_at = evaluated_at.replace(tzinfo=_tz.utc)
+    if now.tzinfo is None:
+        from datetime import timezone as _tz
+        now = now.replace(tzinfo=_tz.utc)
+    age_h = (now - evaluated_at).total_seconds() / 3600
     if age_h <= ctx.max_evaluation_age_hours:
         return passed("evaluation_is_fresh", f"{age_h:.1f}h old")
     return vetoed(

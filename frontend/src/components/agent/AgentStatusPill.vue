@@ -31,6 +31,24 @@
       {{ formatMetric(agent.metrics?.total_actions || 0) }}
     </span>
 
+    <!-- Strategy badge -->
+    <span
+      v-if="agent.config?.config?.strategy_owner"
+      class="agent-pill__badge agent-pill__strategy"
+      :title="agent.config.config.strategy_owner + ' — ' + agent.config.config.data_source"
+    >
+      {{ agent.config.config.strategy_owner === 'original_inkling_2026' ? 'ORIG' : agent.config.config.strategy_owner === 'adopted_phase3' ? 'ADOPT' : agent.config.config.strategy_owner === 'original_breakout' ? 'ORIG' : 'NEW' }}
+    </span>
+
+    <!-- Backtest quick badge (if tracked) -->
+    <span
+      v-if="agent.metrics?.backtest_win_rate !== undefined"
+      class="agent-pill__badge agent-pill__backtest"
+      :style="{ background: agent.metrics.backtest_win_rate >= 0.5 ? '#10b981' : '#f43f5e' }"
+    >
+      WR {{ (agent.metrics.backtest_win_rate * 100).toFixed(0) }}%
+    </span>
+
     <!-- Loading spinner -->
     <span v-if="loading" class="agent-pill__spinner">
       <svg class="spinner" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -98,8 +116,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAgentMeta } from '@/composables/useAgentMeta'
+import { formatCompact } from '@/composables/useFormatters'
 
 const { t } = useI18n()
+const { agentIcon, agentDisplayName } = useAgentMeta()
 
 interface AgentMetrics {
   cycles_completed: number
@@ -151,22 +172,8 @@ const emit = defineEmits<{
   action: [{ agentType: string; action: 'start' | 'stop' | 'pause' | 'resume' }]
 }>()
 
-const iconMap: Record<string, string> = {
-  auto_trend: '📈',
-  xrp_swing: '🌊',
-  p2p_market: '🤝',
-  manual: '👁️',
-}
-
-const nameMap: Record<string, string> = {
-  auto_trend: 'Auto Trend',
-  xrp_swing: 'XRP Swing',
-  p2p_market: 'P2P Market',
-  manual: 'Manual',
-}
-
-const icon = computed(() => iconMap[props.agent.agent_type] || '🤖')
-const displayName = computed(() => nameMap[props.agent.agent_type] || props.agent.agent_type)
+const icon = computed(() => agentIcon(props.agent.agent_type))
+const displayName = computed(() => agentDisplayName(props.agent.agent_type))
 
 const stateClass = computed(() => {
   const state = props.agent.state
@@ -206,11 +213,7 @@ const state = computed(() => {
   return stateMap[props.agent.state] || 'stopped'
 })
 
-function formatMetric(value: number): string {
-  if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M'
-  if (value >= 1000) return (value / 1000).toFixed(1) + 'K'
-  return value.toString()
-}
+const formatMetric = formatCompact
 </script>
 
 <style scoped>
@@ -441,7 +444,7 @@ function formatMetric(value: number): string {
 }
 
 /* RTL support */
-:global([dir="rtl"]) .agent-pill__actions {
+[dir="rtl"] .agent-pill__actions {
   margin-left: 0;
   margin-right: var(--space-2);
   padding-left: 0;

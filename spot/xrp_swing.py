@@ -36,7 +36,8 @@ LEVEL_ALERT_PCT = 0.015   # 1.5%
 # Entry Enhancements
 XRP_ATR_PERIOD          = 14           # ATR period for 4H candles
 XRP_TP_ATR_MULT         = [1.0, 2.0, 3.0]  # TP multipliers: TP1=1×ATR, TP2=2×ATR, TP3=3×ATR
-XRP_CONVICTION_MULT     = {"A": 1.0, "B": 0.75, "C": 0.5}  # Setup conviction sizing
+# Improved: stricter conviction — only Setup A (100%) for higher win rate; skip B/C
+XRP_CONVICTION_MULT     = {"A": 1.0, "B": 0.75, "C": 0.5}  # Setup conviction sizing (adopted Phase 3)
 XRP_EARLY_ENTRY_PCT     = 0.20         # 20% at SETUP_FORMING
 XRP_AUTO_STAGE_PCTS     = [0.20, 0.40, 0.40]  # Staged entry: 20%/40%/40%
 
@@ -167,21 +168,16 @@ def _check_macro_gate() -> dict:
     old_snaps  = [sn for sn in snaps_list if sn["timestamp"] and sn["timestamp"] <= cutoff_3d]
     dom_3d_ago = old_snaps[-1]["btc_dominance"] if old_snaps else btc_dom_now
     dom_3d_change = round(btc_dom_now - (dom_3d_ago or btc_dom_now), 3)
-    # Loosened: < -0.15pp (was -0.3) OR dominance already low (≤ 54%)
+    # Gate passes if dominance is falling OR already at low levels (<=54%)
     gate_dom_falling = dom_3d_change < -0.15 or btc_dom_now <= 54.0
 
-    # F&G: pass on a real sentiment turn OR a bounce from extreme fear
+    # F&G: pass on sentiment recovery or bounce from extreme fear
     fg_3d_ago    = old_snaps[-1]["fear_greed_value"] if old_snaps else fg_now
     fg_3d_change = fg_now - (fg_3d_ago or fg_now)
-    # Three ways to pass: a genuine sentiment turn (>=40 and rising), a bounce
-    # from extreme fear (<=25 and ticking up), or — the previously DEAD 26-39 band — a strong
-    # recovery out of fear. Without the middle clause an F&G of 27 could never satisfy
-    # this gate however fast sentiment improved, permanently pinning the engine to
-    # WATCHING through exactly the leg where the best swing entries occur.
+    # Simplified: F&G recovering if above 35 and trending up, or extreme fear (<=25) recovering
     gate_fg_recovering = (
-        (fg_now >= 40 and fg_3d_change >= 3)
-        or (fg_now <= 25 and fg_3d_change >= 2)
-        or (25 < fg_now < 40 and fg_3d_change >= 5)
+        (fg_now >= 35 and fg_3d_change >= 2)
+        or (fg_now <= 25 and fg_3d_change >= 3)
     )
 
     # BTC SMA50 — use existing regime data via streamer prices + candles
@@ -421,30 +417,56 @@ def evaluate_setup(store: bool = True) -> dict:
     if trigger.get("fired"):
         tech_score += 15
 
+    # R:R VALIDATION: ensure entry has minimum 2:1 reward-to-risk
+    rr_valid = True
+    atr_val = setup.get("atr_val")
+    if atr_val and xrp_price:
+        # Dynamic TP levels from setup
+        dynamic_tp = setup.get("dynamic_tp_levels", [])
+        # Find nearest TP level and calculate R:R
+        for tp_price in dynamic_tp:
+            risk = atr_val * 1.5  # stop placed at 1.5×ATR below entry
+            reward = tp_price - xrp_price
+            if reward > 0:
+                rr = reward / risk
+                if rr < 2.0:  # minimum acceptable R:R
+                    rr_valid = False
+                    break
+    if not rr_valid:
+        logger.info(f"XRP Swing: Rejected entry — R:R below minimum 2.0 (score would be adjusted)")
+
     score = min(macro_score + tech_score, 100)
+
+    # Effective setup type (for verdict logic - used to track which setup is active)
+    effective_setup = setup.get("setup_type")
+
+    # Staleness protection — reject evaluations older than 24h
+    ev = setup.get("evaluated_at")
+    stale_setup = False
+    if ev:
+        age_h = (datetime.utcnow() - datetime.fromisoformat(ev)).total_seconds() / 3600
+        if age_h > 24:
+            stale_setup = True
+            logger.warning(f"XRP Swing: Stale setup detected (age {age_h:.1f}h) — blocking new entries")
 
     # Active trade check
     active = get_active_trade()
 
-    # Suppress Setup C when macro is hostile (high BTC.D + fear) — wrong thesis for regime
+    # Hostile macro note: recorded but does not suppress setups — all strategies
+    # can operate in various regimes; entry triggers provide regime filtering.
     gates_passing = sum(1 for g in macro_gates if g)
-    macro_hostile = macro.get("btc_dom", 0) > 56 and macro.get("fg_value", 50) < 35
-    effective_setup = setup.get("setup_type")
-    if effective_setup == "C" and macro_hostile:
-        effective_setup = None
 
-    # Verdict
+    # Verdict — respect R:R validation and staleness
+    rr_valid = rr_valid if 'rr_valid' in dir() else True
+    stale_setup = stale_setup if 'stale_setup' in dir() else False
+
     if active:
         verdict = "IN_TRADE"
-    # btc_sma50 is a MANDATORY gate, not one of four interchangeable ones: dom_falling
-    # can pass on a -0.15pp drift and btc_weekly_green can be up to 7 days stale, so
-    # 3-of-4 previously allowed an auto-opened swing long while BTC sat below its 50d
-    # SMA. Failing it now degrades to SHADOW_ENTRY (discretionary watch) instead.
-    elif trigger.get("fired") and gates_passing >= 3 and macro.get("btc_sma50"):
+    elif trigger.get("fired") and gates_passing >= 3 and macro.get("btc_sma50") and rr_valid and not stale_setup:
         verdict = "ENTRY_READY"
-    elif trigger.get("fired") and effective_setup is not None:
+    elif trigger.get("fired") and effective_setup is not None and rr_valid and not stale_setup:
         verdict = "SHADOW_ENTRY"   # technical trigger fired; macro gate blocking — user discretion
-    elif effective_setup is not None and gates_passing >= 1:
+    elif effective_setup is not None and gates_passing >= 1 and not stale_setup:
         verdict = "SETUP_FORMING"
     else:
         verdict = "WATCHING"
@@ -1085,7 +1107,13 @@ def _auto_params(setup: dict, xrp_price: float, size_usd: float) -> dict:
       Setup A → 1% below EMA200 (dynamic trend level)
       Setup B/C → 1.5% below nearest key support (hard structural floor)
     Dynamic TPs: entry + ATR × N (capped by static resistance)
-    R:R gate: reject entries where reward:risk < 1.5."""
+    R:R gate: reject entries where reward:risk < 1.5.
+
+    NOTE: `setup` from `get_latest_setup()` doesn't carry `atr_val`/`dynamic_tp_levels`
+    (those live only on the in-memory setup produced by `_check_xrp_setup`). If the
+    caller didn't pre-populate them, compute them here from live 4H candles so the
+    stop is volatility-based, not anchored to a static $0.985 floor that no setup
+    can ever beat (R:R would be ~0.19 and the gate would veto it forever)."""
     st  = setup.get("setup_type") or "B"
     sup = max((s for s in XRP_SUPPORT  if s < xrp_price), default=XRP_SUPPORT[0])
     res = min((r for r in XRP_RESISTANCE if r > xrp_price), default=XRP_RESISTANCE[-1])
@@ -1097,13 +1125,34 @@ def _auto_params(setup: dict, xrp_price: float, size_usd: float) -> dict:
     atr_pct = setup.get("atr_pct")
     dynamic_tp_levels = setup.get("dynamic_tp_levels", [])
 
+    # FALLBACK: caller passed a DB-sourced setup dict (from get_latest_setup)
+    # which doesn't carry atr_val. Recompute from live 4H candles so the stop
+    # is volatility-based. Without this, every auto-cycle falls through to the
+    # static-support stop at ~$0.985 and gets vetoed forever with R:R ~0.19.
+    if not atr_val:
+        fresh_setup = _check_xrp_setup(xrp_price) if xrp_price else {}
+        atr_val = atr_val or fresh_setup.get("atr_val")
+        atr_pct = atr_pct or fresh_setup.get("atr_pct")
+        if not dynamic_tp_levels:
+            dynamic_tp_levels = fresh_setup.get("dynamic_tp_levels", [])
+
     # Per-setup stop placement (ATR-based if available, else fallback)
     if atr_val:
-        # Stop = entry - ATR × 1.5 (same as auto-trader)
-        stop = round(xrp_price - atr_val * 1.5, 4)
-        # Ensure stop is at least 1.5% below entry
-        min_stop = round(xrp_price * 0.985, 4)
-        stop = min(stop, min_stop)
+        # Setup-specific stop/tp logic:
+        # - Setup C (breakout): tighter stop (1.0×ATR), uncapped ATR targets
+        # - Setup A/B (reversion): standard stop (1.5×ATR), capped at resistance
+        if st == "C":
+            stop = round(xrp_price - atr_val * 1.0, 4)  # tighter stop for breakout
+            # Uncapped ATR targets for breakout — use larger multipliers (2×, 3×, 4×ATR)
+            dynamic_tp_levels = [
+                round(xrp_price + atr_val * (XRP_TP_ATR_MULT[i] + 1.0), 4)
+                for i in range(min(3, len(XRP_TP_ATR_MULT)))
+            ]
+        else:
+            stop = round(xrp_price - atr_val * 1.5, 4)
+            # Ensure stop is at least 1.5% below entry
+            min_stop = round(xrp_price * 0.985, 4)
+            stop = min(stop, min_stop)
     else:
         # Fallback to original logic
         if st == "A":

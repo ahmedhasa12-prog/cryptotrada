@@ -27,8 +27,8 @@ class RiskContext:
     # constants rather than a settings object — matching this codebase's
     # existing style (spot/xrp_swing.py's _COOLDOWN_HOURS, _RISK_BUDGET_USD)
     # rather than importing a new configuration pattern for one strategy.
-    max_evaluation_age_hours: float = 5.0
-    min_rr_ratio: float = 1.5
+    max_evaluation_age_hours: float = 24.0
+    min_rr_ratio: float = 2.0
 
     @property
     def in_cooldown(self) -> bool:

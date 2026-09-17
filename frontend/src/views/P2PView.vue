@@ -1,13 +1,11 @@
 <template>
   <div class="page-view">
-    <P2PSnapshot />
     <Analytics />
     <TodayStats />
   </div>
 </template>
 
 <script setup lang="ts">
-import P2PSnapshot from '@/components/P2PSnapshot.vue'
 import Analytics from '@/components/Analytics.vue'
 import TodayStats from '@/components/TodayStats.vue'
 </script>

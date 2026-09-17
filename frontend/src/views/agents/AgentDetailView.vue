@@ -1,5 +1,7 @@
 <template>
   <div class="agent-detail-view">
+    <Spinner v-if="!agent" :label="t('common.loading')" />
+    <template v-else>
     <div class="agent-detail-header">
       <div class="agent-detail-identity">
         <span class="agent-detail-icon">{{ agentIcon }}</span>
@@ -79,30 +81,12 @@
 
     <!-- Metrics Bar -->
     <div class="agent-detail-metrics" v-if="agent.metrics">
-      <div class="metric-item">
-        <span class="metric-value">{{ formatMetric(agent.metrics.cycles_completed) }}</span>
-        <span class="metric-label">{{ t('agents.cycles') }}</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-value">{{ formatMetric(agent.metrics.fast_cycles_completed) }}</span>
-        <span class="metric-label">{{ t('agents.fast_cycles') }}</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-value" :class="pnlClass">{{ formatPnL(agent.metrics.total_pnl_usd || 0) }}</span>
-        <span class="metric-label">{{ t('agents.total_pnl') }}</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-value">{{ agent.metrics.total_entries || 0 }}</span>
-        <span class="metric-label">{{ t('agents.total_entries') }}</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-value">{{ agent.metrics.total_exits || 0 }}</span>
-        <span class="metric-label">{{ t('agents.total_exits') }}</span>
-      </div>
-      <div class="metric-item">
-        <span class="metric-value">{{ formatUptime(agent.metrics.uptime_started_at) }}</span>
-        <span class="metric-label">{{ t('agents.uptime') }}</span>
-      </div>
+      <MetricTile :label="t('agents.cycles')" :value="formatMetric(agent.metrics.cycles_completed)" />
+      <MetricTile :label="t('agents.fast_cycles')" :value="formatMetric(agent.metrics.fast_cycles_completed)" />
+      <MetricTile :label="t('agents.total_pnl')" :value="formatPnL(agent.metrics.total_pnl_usd || 0)" variant="auto" />
+      <MetricTile :label="t('agents.total_entries')" :value="agent.metrics.total_entries || 0" />
+      <MetricTile :label="t('agents.total_exits')" :value="agent.metrics.total_exits || 0" />
+      <MetricTile :label="t('agents.uptime')" :value="formatUptime(agent.metrics.uptime_started_at)" />
     </div>
 
     <!-- Error Banner -->
@@ -145,22 +129,31 @@
         <component :is="tab.component" :agent="agent" :agent-type="agentType" />
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { usePlatformStore } from '@/stores/platform'
-import AutoTrendOverview from '@/components/agent/AutoTrendOverview.vue'
-import AutoTrendPositions from '@/components/agent/AutoTrendPositions.vue'
-import XRPSwingOverview from '@/components/agent/XRPSwingOverview.vue'
-import P2PMarketOverview from '@/components/agent/P2PMarketOverview.vue'
-import ManualOverview from '@/components/agent/ManualOverview.vue'
+import Analytics from '@/components/Analytics.vue'
+import AgentConfigSummary from '@/components/agent/AgentConfigSummary.vue'
+import MetricTile from '@/components/ui/MetricTile.vue'
+import Spinner from '@/components/ui/Spinner.vue'
+import { agentIcon as agentIconFn, agentDisplayName, useAgentMeta } from '@/composables/useAgentMeta'
+import { formatPnL, formatCompact, formatUptime } from '@/composables/useFormatters'
 
-// Stub for tabs that reference components not yet built
-const ComingSoon = { template: '<div class="coming-soon" style="padding:2rem;color:var(--color-text-secondary,#888);text-align:center;">Coming soon</div>' }
+const { stateLabel: agentStateLabel } = useAgentMeta()
+
+// Fallback for an unrecognized agent type — string `template` options need the
+// runtime compiler, which this Vite build doesn't ship, so this uses h() instead.
+const ComingSoon = {
+  render() {
+    return h('div', { style: 'padding:2rem;color:var(--color-text-secondary,#888);text-align:center;' }, 'Coming soon')
+  },
+}
 
 const { t } = useI18n()
 const route = useRoute()
@@ -185,84 +178,35 @@ const tabs = computed(() => {
 
 function getOverviewComponent() {
   switch (agentType.value) {
-    case 'auto_trend': return AutoTrendOverview
-    case 'xrp_swing': return XRPSwingOverview
-    case 'p2p_market': return P2PMarketOverview
-    case 'manual': return ManualOverview
+    case 'auto_trend': return Analytics  // simplified: analytics view for agent
+    case 'xrp_swing': return Analytics
+    case 'sol_swing': return Analytics
+    case 'p2p_market': return Analytics
+    case 'manual': return Analytics
     default: return ComingSoon
   }
 }
 
 function getConfigComponent() {
-  return ComingSoon
+  switch (agentType.value) {
+    case 'auto_trend': return AgentConfigSummary
+    case 'xrp_swing': return AgentConfigSummary
+    case 'sol_swing': return AgentConfigSummary
+    default: return AgentConfigSummary
+  }
 }
 
 function getSpecificTabs() {
-  switch (agentType.value) {
-    case 'auto_trend':
-      return [
-        { id: 'positions', label: t('agents.positions'), component: AutoTrendPositions },
-        { id: 'signals', label: t('agents.signals'), component: ComingSoon },
-        { id: 'history', label: t('agents.history'), component: ComingSoon },
-      ]
-    case 'xrp_swing':
-      return [
-        { id: 'trade_monitor', label: t('agents.trade_monitor'), component: ComingSoon },
-        { id: 'setup', label: t('agents.setup_analysis'), component: ComingSoon },
-        { id: 'history', label: t('agents.history'), component: ComingSoon },
-      ]
-    case 'p2p_market':
-      return [
-        { id: 'snapshot', label: t('agents.snapshot'), component: ComingSoon },
-        { id: 'analytics', label: t('agents.analytics'), component: ComingSoon },
-      ]
-    case 'manual':
-      return [
-        { id: 'insights', label: t('agents.insights'), component: ComingSoon },
-        { id: 'watchlist', label: t('agents.watchlist'), component: ComingSoon },
-      ]
-    default:
-      return []
-  }
+  // Simplified for 3-agent focus: only analytics and risk log tabs where relevant
+  return [
+    { id: 'analytics', label: t('agents.analytics'), component: Analytics },
+  ]
 }
 
-const agentIcon = computed(() => {
-  const icons: Record<string, string> = {
-    auto_trend: '📈',
-    xrp_swing: '🌊',
-    p2p_market: '🤝',
-    manual: '👁️',
-  }
-  return icons[agentType.value] || '🤖'
-})
-
-const displayName = computed(() => {
-  const names: Record<string, string> = {
-    auto_trend: 'Auto Trend',
-    xrp_swing: 'XRP Swing',
-    p2p_market: 'P2P Market',
-    manual: 'Manual',
-  }
-  return names[agentType.value] || agentType.value
-})
-
+const agentIcon = computed(() => agentIconFn(agentType.value))
+const displayName = computed(() => agentDisplayName(agentType.value))
 const stateClass = computed(() => `agent-detail--${agent.value?.state || 'stopped'}`)
-const stateLabel = computed(() => {
-  const labels: Record<string, string> = {
-    running: t('agents.running'),
-    paused: t('agents.paused'),
-    stopped: t('agents.stopped'),
-    error: t('agents.error'),
-    starting: t('agents.starting'),
-    stopping: t('agents.stopping'),
-  }
-  return labels[agent.value?.state] || agent.value?.state
-})
-
-const pnlClass = computed(() => {
-  const pnl = agent.value?.metrics?.total_pnl_usd || 0
-  return pnl >= 0 ? 'positive' : 'negative'
-})
+const stateLabel = computed(() => agentStateLabel(agent.value?.state))
 
 async function fetchAgentStatus() {
   loading.value = true
@@ -295,25 +239,7 @@ async function refreshStatus() {
   await fetchAgentStatus()
 }
 
-function formatMetric(value: number): string {
-  if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M'
-  if (value >= 1000) return (value / 1000).toFixed(1) + 'K'
-  return value.toString()
-}
-
-function formatPnL(value: number): string {
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function formatUptime(startedAt: string | null): string {
-  if (!startedAt) return '—'
-  const diff = Date.now() - new Date(startedAt).getTime()
-  if (diff < 60000) return `${Math.floor(diff / 1000)}s`
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`
-  return `${Math.floor(diff / 86400000)}d`
-}
+const formatMetric = formatCompact
 
 let _interval: ReturnType<typeof setInterval> | null = null
 
@@ -373,7 +299,7 @@ watch(() => route.params.type, async () => {
   justify-content: center;
   background: var(--color-surface-raised);
   border-radius: var(--radius-xl);
-  flex-shrink: 0.
+  flex-shrink: 0;
 }
 
 .agent-detail-identity h1 {
@@ -397,7 +323,7 @@ watch(() => route.params.type, async () => {
   width: 10px;
   height: 10px;
   border-radius: var(--radius-full);
-  flex-shrink: 0.
+  flex-shrink: 0;
 }
 
 .agent-detail--running .agent-detail-state {
@@ -463,7 +389,7 @@ watch(() => route.params.type, async () => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  flex-shrink: 0.
+  flex-shrink: 0;
 }
 
 /* Metrics Bar */
@@ -489,42 +415,6 @@ watch(() => route.params.type, async () => {
   }
 }
 
-.metric-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  text-align: center;
-}
-
-.metric-item:hover {
-  border-color: var(--color-brand);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-
-.metric-value {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-  line-height: var(--line-height-tight);
-}
-
-.metric-value.positive { color: var(--color-success); }
-.metric-value.negative { color: var(--color-danger); }
-
-.metric-label {
-  font-size: var(--text-2xs);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
 
 /* Error Banner */
 .agent-detail-error {
@@ -620,11 +510,11 @@ watch(() => route.params.type, async () => {
 }
 
 /* RTL support */
-:global([dir="rtl"]) .agent-detail-identity {
+[dir="rtl"] .agent-detail-identity {
   flex-direction: row-reverse;
 }
 
-:global([dir="rtl"]) .agent-detail-actions {
+[dir="rtl"] .agent-detail-actions {
   flex-direction: row-reverse;
 }
 </style>

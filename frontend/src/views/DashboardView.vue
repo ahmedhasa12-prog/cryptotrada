@@ -42,6 +42,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { usePlatformStore } from '@/stores/platform'
 import { useUIStore } from '@/stores/ui'
 import AgentCard from '@/components/agent/AgentCard.vue'
@@ -59,20 +60,12 @@ const totalAgentsCount = computed(() => agents.value.length)
 const recentActivities = ref<Array<any>>([])
 const lastUpdateTime = ref('')
 
+const API = import.meta.env.VITE_API_BASE || ''
+
 async function fetchActivities() {
   try {
-    // Fetch recent activities from all agents
-    const activities: Array<any> = []
-    
-    // This would ideally come from a unified API endpoint
-    // For now, we'll simulate with mock data
-    recentActivities.value = [
-      { id: 1, agent: 'auto_trend', action: 'OPENED', symbol: 'BTC', price: 67234, pnl: 2.1, time: Date.now() - 300000 },
-      { id: 2, agent: 'xrp_swing', action: 'TP1_HIT', symbol: 'XRP', price: 0.5234, pnl: 1.5, time: Date.now() - 600000 },
-      { id: 3, agent: 'auto_trend', action: 'CLOSED', symbol: 'ETH', price: 3421, pnl: -0.8, time: Date.now() - 900000 },
-      { id: 4, agent: 'xrp_swing', action: 'STAGE_ADDED', symbol: 'XRP', price: 0.5189, pnl: 0, time: Date.now() - 1200000 },
-    ]
-    
+    const { data } = await axios.get(`${API}/api/agents/activity?limit=10`)
+    recentActivities.value = data.activities ?? []
     lastUpdateTime.value = formatRelativeTime(Date.now())
   } catch (e) {
     console.error('Failed to fetch activities:', e)
@@ -99,12 +92,10 @@ function navigateToAgent(agentType: string) {
 let _interval: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
-  await platformStore.fetchAgentsStatus()
+  // Agent status is fetched/polled by App.vue so the sidebar's agent list
+  // stays populated no matter which page loads first — just read it here.
   await fetchActivities()
-  _interval = setInterval(async () => {
-    await platformStore.fetchAgentsStatus()
-    await fetchActivities()
-  }, 30000)
+  _interval = setInterval(fetchActivities, 30000)
 })
 
 onUnmounted(() => {

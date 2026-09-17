@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -107,37 +107,34 @@ function actionLabel(action: string): string {
   return labels[action] || action
 }
 
+// Plain objects with a `template` string need Vue's runtime compiler, which
+// this Vite build doesn't ship (SFCs are precompiled) — h() renders directly.
+const SVG_ATTRS = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.5 }
+
+const ICON_RENDERERS: Record<string, () => any> = {
+  opened: () => h('svg', SVG_ATTRS, [h('polyline', { points: '5 3 19 12 5 21 5 3' })]),
+  closed: () => h('svg', SVG_ATTRS, [h('rect', { x: 3, y: 3, width: 18, height: 18, rx: 2 })]),
+  tp1_hit: () => h('svg', SVG_ATTRS, [h('path', { d: 'M20 6L9 17l-5-5' })]),
+  tp2_hit: () => h('svg', SVG_ATTRS, [h('path', { d: 'M20 6L9 17l-5-5' })]),
+  tp3_hit: () => h('svg', SVG_ATTRS, [h('path', { d: 'M20 6L9 17l-5-5' })]),
+  stage_added: () => h('svg', SVG_ATTRS, [
+    h('line', { x1: 12, y1: 5, x2: 12, y2: 19 }),
+    h('line', { x1: 5, y1: 12, x2: 19, y2: 12 }),
+  ]),
+  paused: () => h('svg', SVG_ATTRS, [
+    h('rect', { x: 6, y: 4, width: 4, height: 16 }),
+    h('rect', { x: 14, y: 4, width: 4, height: 16 }),
+  ]),
+  resumed: () => h('svg', SVG_ATTRS, [h('polyline', { points: '5 3 19 12 5 21 5 3' })]),
+  error: () => h('svg', SVG_ATTRS, [
+    h('circle', { cx: 12, cy: 12, r: 10 }),
+    h('line', { x1: 15, y1: 9, x2: 9, y2: 15 }),
+    h('line', { x1: 9, y1: 9, x2: 15, y2: 15 }),
+  ]),
+}
+
 function actionIcon(action: string) {
-  const icons = {
-    opened: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="5 3 19 12 5 21 5 3"></polyline></svg>`
-    },
-    closed: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>`
-    },
-    tp1_hit: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg>`
-    },
-    tp2_hit: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg>`
-    },
-    tp3_hit: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg>`
-    },
-    stage_added: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`
-    },
-    paused: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`
-    },
-    resumed: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="5 3 19 12 5 21 5 3"></polyline></svg>`
-    },
-    error: {
-      template: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`
-    },
-  }
-  return icons[action.toLowerCase() as keyof typeof icons] || icons.opened
+  return { render: ICON_RENDERERS[action.toLowerCase()] || ICON_RENDERERS.opened }
 }
 
 function formatPrice(price: number): string {
@@ -324,11 +321,11 @@ function formatISO(timestamp: number): string {
 }
 
 /* RTL support */
-:global([dir="rtl"]) .activity-feed__item {
+[dir="rtl"] .activity-feed__item {
   flex-direction: row-reverse;
 }
 
-:global([dir="rtl"]) .activity-feed__header {
+[dir="rtl"] .activity-feed__header {
   flex-direction: row-reverse;
 }
 </style>

@@ -8,6 +8,7 @@ from data.database import get_session
 from data.models import SystemEvent
 from web.state import get_state
 from spot.trading_modes import TradingMode, get_trading_mode, set_trading_mode as _set_trading_mode
+from solana_trader import get_solana_status
 
 router = APIRouter(prefix="/api")
 
@@ -16,6 +17,11 @@ class StatusResponse(BaseModel):
     mode: str
     availability: str
     trading_mode: str
+    solana_agent: str = "unknown"
+    solana_price: float | None = None
+    solana_max_positions: int = 3
+    solana_risk_pct: float = 0.0
+    solana_min_rr: float = 2.0
 
 
 class SetModeRequest(BaseModel):
@@ -34,10 +40,16 @@ class SetTradingModeRequest(BaseModel):
 def get_status():
     state = get_state()
     trading_mode = get_trading_mode()
+    sol = get_solana_status()
     return StatusResponse(
         mode=state.mode.value,
         availability=state.availability.value,
-        trading_mode=trading_mode.value
+        trading_mode=trading_mode.value,
+        solana_agent=sol["solana_agent"],
+        solana_price=sol["solana_price"],
+        solana_max_positions=sol["solana_max_positions"],
+        solana_risk_pct=sol["solana_risk_pct"],
+        solana_min_rr=sol["solana_min_rr"],
     )
 
 

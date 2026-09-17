@@ -34,7 +34,7 @@ def make_proposal(**overrides) -> OpenProposal:
         tp1=1.0000,
         tp2=1.2500,
         tp3=1.3800,
-        rr_ratio=1.8,
+        rr_ratio=2.0,
     )
     return OpenProposal(**{**defaults, **overrides})
 
@@ -108,8 +108,9 @@ def test_different_eval_id_is_not_a_veto():
 
 
 def test_evaluation_stale():
+    """Evaluation older than 24h must be refused."""
     assert_vetoed_for(
-        make_proposal(evaluated_at=NOW - timedelta(hours=6)),
+        make_proposal(evaluated_at=NOW - timedelta(hours=25)),
         make_context(),
         VetoReason.EVALUATION_STALE,
     )
@@ -143,9 +144,9 @@ def test_risk_reward_too_low():
 
 
 def test_risk_reward_exactly_at_the_floor_passes():
-    """The floor itself is inclusive — 1.5 is acceptable, not just >1.5."""
+    """The floor itself is inclusive — 2.0 is acceptable, not just >2.0."""
     ctx = make_context()
-    assert review(make_proposal(rr_ratio=1.5), ctx).approved
+    assert review(make_proposal(rr_ratio=2.0), ctx).approved
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -176,7 +177,7 @@ def test_multiple_failures_are_all_reported():
     """The point of running every gate is seeing every objection, not just
     whichever one happened to run first."""
     verdict = review(
-        make_proposal(verdict="WATCHING", rr_ratio=1.0, evaluated_at=NOW - timedelta(hours=9)),
+        make_proposal(verdict="WATCHING", rr_ratio=1.0, evaluated_at=NOW - timedelta(hours=25)),
         make_context(),
     )
     reasons = {c.reason for c in verdict.failures}

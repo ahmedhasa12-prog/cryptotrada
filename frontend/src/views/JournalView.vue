@@ -1,21 +1,13 @@
 <template>
   <div class="page-view">
-    <div class="page-header">
-      <h1>{{ t('journal.title') }}</h1>
-    </div>
-    <LogTradeModal v-if="showModal" @close="showModal = false" />
     <TodayStats />
+    <TradeJournal />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import TodayStats from '@/components/TodayStats.vue'
-import LogTradeModal from '@/components/LogTradeModal.vue'
-
-const { t } = useI18n()
-const showModal = ref(false)
+import TradeJournal from '@/components/trading/TradeJournal.vue'
 </script>
 
 <style scoped>
@@ -30,16 +22,4 @@ const showModal = ref(false)
   box-sizing: border-box;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.page-header h1 {
-  font-size: var(--text-3xl, 1.875rem);
-  font-weight: var(--font-bold, 700);
-  color: var(--color-text-primary, var(--color-text));
-  margin: 0;
-}
 </style>

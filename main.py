@@ -26,7 +26,7 @@ from p2p.p2p_logger import get_daily_stats
 from intelligence.sdg_monitor import check_rate_movement_alerts
 from intelligence.competitor_tracker import check_competitor_changes
 from p2p.rate_adjuster import run_adjuster
-from spot.data_fetcher import refresh_interval, startup_fetch
+from spot.data_fetcher import refresh_interval, startup_fetch, retry_failed_fetches
 from spot.macro import refresh_macro
 from spot.positions import get_open_positions
 from spot.scorer import get_scores
@@ -295,6 +295,12 @@ def main() -> None:
     scheduler.add_job(xrp_swing_evaluate, "interval", minutes=15, kwargs={"store": True}, id="xrp_swing_eval", misfire_grace_time=_WAKE_GRACE, coalesce=True)
     # XRP Swing — Sunday 07:00 UTC weekly review stored as system event
     scheduler.add_job(xrp_weekly_review, "cron", day_of_week="sun", hour=7, minute=0, id="xrp_swing_weekly")
+    # Auto-retry for failed fetches (rate limit / overload resilience) - runs every 30s
+    async def _auto_retry_fetches():
+        retries = await retry_failed_fetches()
+        if retries > 0:
+            logger.info(f"Auto-retry completed: {retries} fetches recovered")
+    scheduler.add_job(_auto_retry_fetches, "interval", seconds=30, id="auto_retry_fetches", coalesce=True)
     # XRP Swing — 30s fast SL guard: enforces hard stop and trailing stop immediately
     scheduler.add_job(_xrp_fast_sl_check, "interval", seconds=30, id="xrp_fast_sl")
 

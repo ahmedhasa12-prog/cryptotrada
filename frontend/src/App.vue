@@ -21,10 +21,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUIStore } from '@/stores/ui'
+import { usePlatformStore } from '@/stores/platform'
 import { useTheme } from '@/composables/useTheme'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import SideNav from '@/components/layout/SideNav.vue'
@@ -33,15 +34,28 @@ import ToastContainer from '@/components/ui/ToastContainer.vue'
 const { locale } = useI18n()
 const route = useRoute()
 const uiStore = useUIStore()
+const platformStore = usePlatformStore()
 const { theme } = useTheme()
 
-onMounted(() => {
+let _agentsInterval: ReturnType<typeof setInterval> | null = null
+
+onMounted(async () => {
   document.documentElement.setAttribute('data-theme', theme.value)
+
+  // The sidebar's agent list needs this regardless of which page loads
+  // first — landing directly on /p2p, /intel, etc. used to leave it empty
+  // all session since only Dashboard/Agents/AgentDetail ever fetched it.
+  await platformStore.fetchAgentsStatus()
+  _agentsInterval = setInterval(() => platformStore.fetchAgentsStatus(), 30000)
+})
+
+onUnmounted(() => {
+  if (_agentsInterval) clearInterval(_agentsInterval)
 })
 
 const sidenavMarginLeft = computed(() => {
-  if (uiStore.isMobile) return 0
-  return uiStore.sideNavCollapsed ? 72 : 260
+  if (uiStore.isMobile) return '0'
+  return (uiStore.sideNavCollapsed ? 72 : 260) + 'px'
 })
 </script>
 
@@ -84,7 +98,7 @@ const sidenavMarginLeft = computed(() => {
 }
 
 /* RTL support */
-:global([dir="rtl"]) .app-main {
+[dir="rtl"] .app-main {
   /* margin-left becomes margin-right in RTL via logical properties */
 }
 
