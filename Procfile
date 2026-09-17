@@ -1,1 +1,1 @@
-web: cd frontend && npm run build && cd .. && python3 main.py
+web: python3 main.py
