@@ -1,0 +1,5 @@
+[builds.python]
+  pip = ["-r requirements.txt"]
+
+[builds.config]
+  start = ".venv/bin/python main.py"
