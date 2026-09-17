@@ -348,7 +348,8 @@ def main() -> None:
         scheduler.shutdown(wait=False)
 
     app = create_app(lifespan=lifespan)
-    uvicorn.run(app, host="0.0.0.0", port=8001, log_level="warning")
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
 
 
 if __name__ == "__main__":
