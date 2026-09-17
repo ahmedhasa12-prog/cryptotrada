@@ -6,5 +6,8 @@ export default defineRailway(() => {
   const cryptotrada = service("cryptotrada");
   return project("cryptotrada", {
     resources: [cryptotrada],
+    build: {
+      source: { type: "docker" },
+    },
   });
 });
