@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y curl && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -16,15 +16,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY frontend/ ./frontend/
 RUN cd frontend && npm install && npm run build
 
-# Copy backend
-COPY main.py .
+# Copy all backend files
+COPY *.py .
 COPY web/ ./web/
 COPY spot/ ./spot/
 COPY data/ ./data/
-COPY .env.example .
+COPY p2p/ ./p2p/
+COPY intelligence/ ./intelligence/
+COPY binance/ ./binance/
+COPY bot/ ./bot/
+COPY tests/ ./tests/
 
-# Expose port
 EXPOSE 8001
-
-# Start
 CMD ["python3", "main.py"]
