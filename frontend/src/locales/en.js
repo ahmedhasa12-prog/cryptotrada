@@ -795,6 +795,7 @@ export default {
   },
   agents: {
     title: 'Agents',
+    trading_agents: 'Trading Agents',
     auto_trend: 'Auto Trend',
     xrp_swing: 'XRP Swing',
     p2p_market: 'P2P Market',

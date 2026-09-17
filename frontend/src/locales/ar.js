@@ -795,6 +795,7 @@ export default {
   },
   agents: {
     title: 'الوكلاء',
+    trading_agents: 'الوكلاء التداوليون',
     auto_trend: 'الاتجاه التلقائي',
     xrp_swing: 'تداول XRP',
     p2p_market: 'سوق P2P',

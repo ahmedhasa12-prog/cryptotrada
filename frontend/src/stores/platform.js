@@ -46,6 +46,8 @@ export const usePlatformStore = defineStore('platform', () => {
     alerts.value.some(a => a.level === 'critical')
   )
 
+  const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing']
+
   const runningAgents = computed(() =>
     agents.value.filter(a => a.state === 'running')
   )
@@ -56,6 +58,11 @@ export const usePlatformStore = defineStore('platform', () => {
 
   const stoppedAgents = computed(() =>
     agents.value.filter(a => a.state === 'stopped' || a.state === 'error')
+  )
+
+  // Trading agents only (excludes p2p_market and manual)
+  const tradingAgents = computed(() =>
+    agents.value.filter(a => TRADING_AGENT_TYPES.includes(a.agent_type))
   )
 
   // ── actions ────────────────────────────────────────────────────────────

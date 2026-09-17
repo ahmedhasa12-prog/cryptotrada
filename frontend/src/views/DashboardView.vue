@@ -48,13 +48,14 @@ import { useUIStore } from '@/stores/ui'
 import AgentCard from '@/components/agent/AgentCard.vue'
 import ActivityFeed from '@/components/ui/ActivityFeed.vue'
 
+const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing']
 const { t } = useI18n()
 const router = useRouter()
 const platformStore = usePlatformStore()
 const uiStore = useUIStore()
 
-const agents = computed(() => platformStore.agents)
-const runningAgentsCount = computed(() => platformStore.runningAgents.length)
+const agents = computed(() => platformStore.tradingAgents)
+const runningAgentsCount = computed(() => platformStore.runningAgents.filter(a => TRADING_AGENT_TYPES.includes(a.agent_type)).length)
 const totalAgentsCount = computed(() => agents.value.length)
 
 const recentActivities = ref<Array<any>>([])

@@ -1,7 +1,7 @@
 <template>
   <div class="agents-view">
     <div class="agents-header">
-      <h1>{{ t('agents.title') }}</h1>
+      <h1>{{ t('agents.trading_agents') }}</h1>
       <div class="agents-actions">
         <button class="btn btn-primary" @click="startAllEnabled" :disabled="allEnabledRunning">
           {{ t('agents.start_all') }}
@@ -34,13 +34,14 @@ import { useRouter } from 'vue-router'
 import { usePlatformStore } from '@/stores/platform'
 import AgentCard from '@/components/agent/AgentCard.vue'
 
+const TRADING_AGENT_TYPES = ['auto_trend', 'xrp_swing', 'sol_swing']
 const { t } = useI18n()
 const router = useRouter()
 const platformStore = usePlatformStore()
 
-const agents = computed(() => platformStore.agents)
-const allEnabledRunning = computed(() => platformStore.runningAgents.length === agents.value.filter(a => a.enabled).length)
-const allStopped = computed(() => platformStore.runningAgents.length === 0)
+const agents = computed(() => platformStore.tradingAgents)
+const allEnabledRunning = computed(() => platformStore.runningAgents.filter(a => TRADING_AGENT_TYPES.includes(a.agent_type)).length === agents.value.filter(a => a.enabled).length)
+const allStopped = computed(() => platformStore.runningAgents.filter(a => TRADING_AGENT_TYPES.includes(a.agent_type)).length === 0)
 
 async function onAgentAction(event: { agentType: string; action: string }) {
   await platformStore.agentAction(event.agentType, event.action as any)
