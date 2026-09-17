@@ -520,3 +520,53 @@ watch(() => route.params.type, async () => {
   flex-direction: row-reverse;
 }
 </style>
+<style scoped>
+/* Mobile: responsive detail layout */
+.detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-4);
+    }
+}
+
+@media (min-width: 1024px) {
+    .detail-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Touch-friendly controls */
+.control-btn {
+    min-height: 44px;
+    width: 100%;
+    margin-bottom: var(--space-2);
+}
+
+@media (min-width: 768px) {
+    .control-btn {
+        width: auto;
+        margin-bottom: 0;
+    }
+}
+
+/* Responsive status indicators */
+.status-badge {
+    width: 100%;
+    text-align: center;
+    padding: var(--space-2);
+}
+
+@media (min-width: 768px) {
+    .status-badge {
+        width: auto;
+        text-align: left;
+    }
+}
+</style>

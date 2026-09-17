@@ -217,3 +217,93 @@ onUnmounted(() => {
   }
 }
 </style>
+<style scoped>
+/* Mobile-first responsive card grid */
+.agent-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .agent-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .agent-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Touch-friendly agent cards */
+.agent-card {
+    min-height: 120px;
+    padding: var(--space-4);
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.agent-card:active {
+    transform: scale(0.98);
+}
+
+/* Mobile metric tiles */
+.metric-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.metric-tile {
+    flex: 1 1 140px;
+    min-height: 60px;
+    padding: var(--space-3);
+}
+
+/* Responsive chart containers */
+.chart-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.chart-wrapper canvas {
+    max-width: 100%;
+    height: auto !important;
+}
+
+/* Touch-friendly action buttons */
+.action-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.9rem;
+}
+
+/* Mobile: hide secondary info */
+.mobile-hide {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .mobile-hide {
+        display: inline;
+    }
+}
+
+/* Compact mode for mobile P2P */
+.p2p-table-row {
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+@media (min-width: 768px) {
+    .p2p-table-row {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+</style>

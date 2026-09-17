@@ -402,3 +402,40 @@ onMounted(async () => {
   color: var(--color-text-tertiary);
 }
 </style>
+
+<style scoped>
+/* Mobile: compact P2P layout */
+.p2p-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+    .p2p-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .p2p-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Touch-friendly P2P cards */
+.p2p-card {
+    min-height: 80px;
+    padding: var(--space-3);
+}
+
+/* Responsive heatmap */
+.heatmap-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.heatmap-grid {
+    min-width: 100%;
+}
+</style>

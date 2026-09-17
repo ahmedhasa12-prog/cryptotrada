@@ -343,3 +343,39 @@ function agentStateLabel(state: string): string {
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 </style>
+<style scoped>
+/* Mobile: taller nav items */
+.side-nav-item {
+    min-height: 48px;
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.95rem;
+}
+
+@media (min-width: 768px) {
+    .side-nav-item {
+        min-height: 44px;
+        padding: var(--space-2) var(--space-3);
+        font-size: 0.9rem;
+    }
+}
+
+/* Touch-friendly icons */
+.nav-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+/* Mobile: hide sub-text */
+.nav-subtext {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .nav-subtext {
+        display: inline;
+        font-size: var(--text-xs);
+        color: var(--color-text-tertiary);
+    }
+}
+</style>

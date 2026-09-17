@@ -329,3 +329,35 @@ function formatISO(timestamp: number): string {
   flex-direction: row-reverse;
 }
 </style>
+<style scoped>
+/* Mobile: compact activity feed */
+.activity-item {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.85rem;
+    min-height: 44px;
+}
+
+@media (min-width: 768px) {
+    .activity-item {
+        padding: var(--space-3);
+    }
+}
+
+/* Touch-friendly list items */
+.activity-list {
+    gap: var(--space-1);
+}
+
+/* Mobile: hide timestamp on small screens */
+.activity-time {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .activity-time {
+        display: inline;
+        font-size: var(--text-xs);
+        color: var(--color-text-tertiary);
+    }
+}
+</style>
