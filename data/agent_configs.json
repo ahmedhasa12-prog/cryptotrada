@@ -1,6 +1,6 @@
 {
   "auto_trend": {
-    "enabled": false,
+    "enabled": true,
     "main_cycle_interval_sec": 600,
     "fast_cycle_interval_sec": 30,
     "config": {

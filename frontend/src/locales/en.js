@@ -899,6 +899,9 @@ export default {
     last_update: 'Last update:',
     recent_activity: 'Recent Activity',
     view_all: 'View all',
+    agent_overview: 'Agent Overview',
+    agent_details: 'Agent Details',
+    details: 'Details',
   },
   activity_feed: {
     empty: 'No recent activity.',

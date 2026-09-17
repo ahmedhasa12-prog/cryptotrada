@@ -899,6 +899,9 @@ export default {
     last_update: 'آخر تحديث:',
     recent_activity: 'النشاط الأخير',
     view_all: 'عرض الكل',
+    agent_overview: 'نظرة عامة على الوكلاء',
+    agent_details: 'تفاصيل الوكلاء',
+    details: 'التفاصيل',
   },
   activity_feed: {
     empty: 'لا يوجد نشاط حديث.',
