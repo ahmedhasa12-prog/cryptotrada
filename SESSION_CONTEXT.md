@@ -1,7 +1,8 @@
 # Session Context — CryptoTrada Project
 
-**Last Updated:** 2026-09-16
-**Current Phase:** Phase 4 (Agent Framework) — Core built, needs completion
+**Last Updated:** 2026-09-17
+**Current Phase:** Phase 4 ✅ COMPLETE — Agent framework built, tested, verified
+**See `HANDOFF.md` for the canonical handoff document**
 **See `HANDOFF.md` for the canonical handoff document**
 
 ---
@@ -17,8 +18,8 @@ CryptoTrada is a cryptocurrency trading intelligence platform:
 ---
 
 ## Test Results
-- **234 tests passing** (all test suites)
-- 13635 deprecation warnings (`datetime.utcnow()` → `datetime.now(datetime.UTC)` migration needed)
+- **250 tests passing** (234 original + 16 new integration tests)
+- 15052 deprecation warnings
 - No test failures
 
 ## Live Platform
@@ -44,11 +45,15 @@ CryptoTrada is a cryptocurrency trading intelligence platform:
 - ATR-based dynamic TP, conviction-based sizing, staged entry, regime-aware trailing
 - See `HANDOFF.md` for full detail
 
-### ✅ Phase 4: Agent Framework (Core Built)
+### ✅ Phase 4: Agent Framework (COMPLETE)
 - `spot/trading_modes.py` — BaseAgent ABC, AutoTrendAgent, XRPSwingAgent, SOLSwingAgent, P2PMarketAgent, ManualAgent, AgentRegistry, EventBus (821 lines)
 - REST API at `/api/agents/` — start/stop/pause/resume/config endpoints
 - `data/agent_configs.json` — Per-agent config persistence
-- 12 tests were broken by partial wiring (need verification)
+- **All 5 agents instantiate and run correctly** — verified via API and integration tests
+- **Bug fixed**: `update_agent_config` now properly updates top-level `AgentConfig` fields
+- **Bug fixed**: `SOLSwingAgent` constructor cleaned up (removed unused `strategy` param)
+- **Refactored**: `agent3_sol_swing.py` moved to `spot/sol_swing.py`
+- **16 new integration tests** added in `tests/test_trading_modes.py`
 
 ### ✅ Rate-Limit Resilience
 - Exponential backoff on 429s, checkpoint save/load, auto-retry every 30s
