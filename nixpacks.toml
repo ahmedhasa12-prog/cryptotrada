@@ -1,0 +1,13 @@
+[variables]
+  NODE_VERSION = "20"
+  PYTHON_VERSION = "3.14"
+
+[nix]
+  enableCache = true
+
+[packages]
+  nodejs = "nodejs_20"
+  python = "python314"
+
+[build]
+  only = ["frontend/dist", "web", "data", "spot", "main.py", "requirements.txt"]
