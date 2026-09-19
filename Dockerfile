@@ -2,6 +2,9 @@ FROM python:3.14-slim AS builder
 
 WORKDIR /app
 
+# Set PORT for Railway
+ENV PORT=8080
+
 # Install Node.js 20
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
