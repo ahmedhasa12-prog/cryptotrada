@@ -26,5 +26,5 @@ COPY intelligence/ ./intelligence/
 COPY binance/ ./binance/
 COPY bot/ ./bot/
 
-EXPOSE 8001
+EXPOSE 8080
 CMD ["python3", "main.py"]

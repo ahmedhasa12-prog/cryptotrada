@@ -2,6 +2,7 @@
   builder = "docker"
 
 [env]
+  PORT = "8080"
   OPERATING_MODE = "manual"
   AVAILABILITY = "online"
   LOG_LEVEL = "INFO"
@@ -12,3 +13,6 @@
 [mounts]
   source = "data"
   destination = "/app/data"
+
+[deploy]
+  healthcheck_path = "/api/journal/summary"
