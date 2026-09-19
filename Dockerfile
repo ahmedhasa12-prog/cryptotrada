@@ -25,7 +25,6 @@ COPY p2p/ ./p2p/
 COPY intelligence/ ./intelligence/
 COPY binance/ ./binance/
 COPY bot/ ./bot/
-COPY tests/ ./tests/
 
 EXPOSE 8001
 CMD ["python3", "main.py"]
