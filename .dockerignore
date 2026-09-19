@@ -9,7 +9,6 @@ venv
 *.db-wal
 *.log
 logs/
-frontend/dist
 frontend/.cache
 .vscode
 .idea
