@@ -12,3 +12,10 @@
 
 [build]
   only = ["frontend/src", "frontend/package.json", "frontend/vite.config.js", "frontend/index.html", "web", "spot", "data", "main.py", "requirements.txt"]
+
+[providers]
+  npm = "20"
+
+[setup]
+  node = "20"
+  PATH = "/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin"
