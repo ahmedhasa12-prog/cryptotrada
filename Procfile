@@ -1,1 +1,1 @@
-web: cd frontend && npm install && npm run build && cd .. && python3 main.py
+web: export PATH="/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin:$PATH" && cd frontend && npm install && npm run build && cd .. && python3 main.py

@@ -1,13 +1,12 @@
 [build]
-  builder = "nixpacks"
+  builder = "docker"
+  dockerfile = "Dockerfile"
 
-[install]
-  npm_version = "20"
-  python_version = "3.14"
+[deploy]
+  start_command = "python3 main.py"
+  healthcheck_path = "/api/journal/summary"
 
 [env]
-  NODE_VERSION = "20"
-  PYTHON_VERSION = "3.14"
   OPERATING_MODE = "manual"
   AVAILABILITY = "online"
   LOG_LEVEL = "INFO"
@@ -18,7 +17,3 @@
 [mounts]
   source = "data"
   destination = "/app/data"
-
-[deploy]
-  start_command = "python3 main.py"
-  healthcheck_path = "/api/journal/summary"
