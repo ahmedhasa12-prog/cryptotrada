@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: cryptotrada
+    env: docker
+    dockerfilePath: ./Dockerfile
+    port: 8001
+    healthcheckPath: /api/journal/summary
+    envVars:
+      - key: OPERATING_MODE
+        value: manual
+      - key: AVAILABILITY
+        value: online
+      - key: LOG_LEVEL
+        value: INFO
+      - key: P2P_ASSET
+        value: USDT
+      - key: P2P_FIAT
+        value: SDG
+      - key: P2P_SPREAD_ALERT_HIGH
+        value: "25"
+      - key: P2P_SPREAD_ALERT_LOW
+        value: "10"
+      - key: P2P_PREMIUM_BUYER_THRESHOLD
+        value: "30"
+      - key: P2P_RATE_ADJUSTER_ENABLED
+        value: "false"
+      - key: CB_IN_PAPER_MODE
+        value: "true"
+      - key: DASHBOARD_PASSWORD
+        value: CHANGE_ME
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cryptotrada-db
+          property: connectionString
+    databases:
+      - name: cryptotrada-db
+        plan: free
+
+databases:
+  - name: cryptotrada-db
+    plan: free
+    region: us
